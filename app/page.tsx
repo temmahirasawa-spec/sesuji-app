@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Task, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, mergeTasks, saveTimeRecord, loadTimeRecord } from '@/lib/storage';
+import { saveTasks, loadTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import styles from './page.module.css';
 
@@ -208,9 +208,11 @@ export default function Home() {
   const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
 
   useEffect(() => {
+    // 1. まずlocalStorageから即座に表示
     const loaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
     const times: { [key: string]: string } = {};
-    Object.keys(WEEK_DATA).forEach(date => {
+    const dates = Object.keys(WEEK_DATA);
+    dates.forEach(date => {
       const savedToday = loadTasks(`${date}_today`);
       const savedDaily = loadTasks(`${date}_daily`);
       loaded[date] = {
@@ -226,6 +228,36 @@ export default function Home() {
     setTimeRecords(times);
     setIsLoaded(true);
     updateProgress(loaded);
+
+    // 2. クラウドから最新データを取得して上書き
+    (async () => {
+      const cloudLoaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
+      const cloudTimes: { [key: string]: string } = {};
+      let hasCloudData = false;
+
+      for (const date of dates) {
+        const cloudToday = await loadTasksCloud(`${date}_today`);
+        const cloudDaily = await loadTasksCloud(`${date}_daily`);
+        cloudLoaded[date] = {
+          today: mergeTasks(WEEK_DATA[date].todayTasks, cloudToday || loadTasks(`${date}_today`)),
+          daily: mergeTasks(makeDailyTasks(date), cloudDaily || loadTasks(`${date}_daily`)),
+        };
+        if (cloudToday || cloudDaily) hasCloudData = true;
+
+        const cloudWakeup = await loadTimeRecordCloud(date, 'wakeup');
+        const cloudSleep = await loadTimeRecordCloud(date, 'sleep');
+        if (cloudWakeup) { cloudTimes[`${date}_wakeup`] = cloudWakeup; hasCloudData = true; }
+        else if (times[`${date}_wakeup`]) cloudTimes[`${date}_wakeup`] = times[`${date}_wakeup`];
+        if (cloudSleep) { cloudTimes[`${date}_sleep`] = cloudSleep; hasCloudData = true; }
+        else if (times[`${date}_sleep`]) cloudTimes[`${date}_sleep`] = times[`${date}_sleep`];
+      }
+
+      if (hasCloudData) {
+        setWeekTasks(cloudLoaded);
+        setTimeRecords(cloudTimes);
+        updateProgress(cloudLoaded);
+      }
+    })();
   }, []);
 
   const updateProgress = useCallback((tasks: { [key: string]: { today: Task[]; daily: Task[] } }) => {
