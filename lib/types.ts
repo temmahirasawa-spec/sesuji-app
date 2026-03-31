@@ -2,6 +2,7 @@ export interface Task {
   id: number;
   text: string;
   completed: boolean;
+  category?: 'daily' | 'today';
 }
 
 export interface DayPlan {
@@ -9,15 +10,16 @@ export interface DayPlan {
   day: string;
   focus: string;
   inspiration: string;
-  tasks: Task[];
-  sexStatus: string;
+  todayTasks: Task[];
+  dailyTasks: Task[];
+  goal: string;
   milestoneTitle: string;
   milestoneDescription: string;
-  color: string;
 }
 
 export interface AppState {
   [key: string]: {
-    tasks: Task[];
+    todayTasks: Task[];
+    dailyTasks: Task[];
   };
 }
