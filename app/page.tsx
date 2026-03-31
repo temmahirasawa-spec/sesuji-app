@@ -214,12 +214,28 @@ export default function Home() {
     const loaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
     const times: { [key: string]: string } = {};
     const dates = Object.keys(WEEK_DATA);
+
+    // 3/31のdailyルーティンをテンプレートとして取得
+    const baseDaily = loadTasks('3/31_daily');
+
     dates.forEach(date => {
       const savedToday = loadTasks(`${date}_today`);
       const savedDaily = loadTasks(`${date}_daily`);
+
+      // dailyが未保存の日は3/31のルーティン構成をテンプレートとして使用（completedはリセット）
+      let daily: Task[];
+      if (savedDaily) {
+        daily = mergeTasks(makeDailyTasks(date), savedDaily);
+      } else if (baseDaily) {
+        daily = baseDaily.map((t: Task) => ({ ...t, completed: false }));
+        saveTasks(`${date}_daily`, daily);
+      } else {
+        daily = mergeTasks(makeDailyTasks(date), null);
+      }
+
       loaded[date] = {
         today: mergeTasks(WEEK_DATA[date].todayTasks, savedToday),
-        daily: mergeTasks(makeDailyTasks(date), savedDaily),
+        daily,
       };
       const wakeup = loadTimeRecord(date, 'wakeup');
       const sleep = loadTimeRecord(date, 'sleep');
@@ -654,6 +670,17 @@ export default function Home() {
                     <div className={styles.weekListProgress}>
                       <div className={styles.weekListProgressFill} style={{ width: `${dayProgress}%` }}></div>
                     </div>
+                    {(() => {
+                      const wakeup = timeRecords[`${date}_wakeup`];
+                      const sleep = timeRecords[`${date}_sleep`];
+                      if (!wakeup && !sleep) return null;
+                      return (
+                        <div className={styles.weekListTimes}>
+                          {wakeup && <span className={styles.weekListTime}>起床 {wakeup}</span>}
+                          {sleep && <span className={styles.weekListTime}>就寝 {sleep}</span>}
+                        </div>
+                      );
+                    })()}
                     <div className={styles.weekListTasks}>
                       {CATEGORY_ORDER.map(cat => {
                         const catTasks = (groupedToday[cat] || []);
