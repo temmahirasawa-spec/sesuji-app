@@ -38,6 +38,11 @@ export const saveTasks = (key: string, tasks: Task[]) => {
   cloudSave(`tasks_${key}`, tasks);
 };
 
+// localStorageのみに保存（クラウドから取得したデータのキャッシュ用）
+export const localSaveTasks = (key: string, tasks: Task[]) => {
+  localSave(STORAGE_KEY, key, tasks);
+};
+
 export const loadTasksCloud = async (key: string): Promise<Task[] | null> => {
   return await cloudLoad(`tasks_${key}`);
 };
@@ -63,22 +68,9 @@ export const loadTimeRecordCloud = async (date: string, type: 'wakeup' | 'sleep'
 // Merge
 // ============================
 
+// savedがあればそのまま使う（順序・削除・完了すべて保持）
+// savedがなければデフォルトを初期値として使う
 export const mergeTasks = (defaults: Task[], saved: Task[] | null): Task[] => {
-  if (!saved || saved.length === 0) return defaults.map(t => ({ ...t }));
-
-  const defaultMap = new Map<number, Task>();
-  defaults.forEach(t => defaultMap.set(t.id, t));
-
-  // Use saved order as the base - this preserves drag-and-drop reordering
-  const merged = saved.map(t => {
-    const d = defaultMap.get(t.id);
-    // Keep saved state (completed, text, order) but use default category if available
-    return d ? { ...d, completed: t.completed, text: t.text } : { ...t };
-  });
-
-  // Add any new defaults that weren't in saved data
-  const savedIds = new Set(saved.map(t => t.id));
-  const newDefaults = defaults.filter(t => !savedIds.has(t.id));
-
-  return [...merged, ...newDefaults.map(t => ({ ...t }))];
+  if (!saved) return defaults.map(t => ({ ...t }));
+  return saved.map(t => ({ ...t }));
 };

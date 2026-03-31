@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Task, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
+import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import styles from './page.module.css';
 
@@ -231,7 +231,7 @@ export default function Home() {
     setIsLoaded(true);
     updateProgress(loaded);
 
-    // 2. クラウドから最新データを取得して上書き
+    // 2. クラウドから最新データを取得して上書き（他デバイスとの同期）
     (async () => {
       const cloudLoaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
       const cloudTimes: { [key: string]: string } = {};
@@ -240,11 +240,23 @@ export default function Home() {
       for (const date of dates) {
         const cloudToday = await loadTasksCloud(`${date}_today`);
         const cloudDaily = await loadTasksCloud(`${date}_daily`);
-        cloudLoaded[date] = {
-          today: mergeTasks(WEEK_DATA[date].todayTasks, cloudToday || loadTasks(`${date}_today`)),
-          daily: mergeTasks(makeDailyTasks(date), cloudDaily || loadTasks(`${date}_daily`)),
-        };
-        if (cloudToday || cloudDaily) hasCloudData = true;
+
+        // クラウドデータがあればそのまま使う（デフォルトとマージしない）
+        const today = cloudToday
+          ? cloudToday.map((t: Task) => ({ ...t }))
+          : loaded[date].today;
+        const daily = cloudDaily
+          ? cloudDaily.map((t: Task) => ({ ...t }))
+          : loaded[date].daily;
+
+        cloudLoaded[date] = { today, daily };
+
+        if (cloudToday || cloudDaily) {
+          hasCloudData = true;
+          // クラウドデータをlocalStorageにも保存して同期
+          if (cloudToday) localSaveTasks(`${date}_today`, cloudToday);
+          if (cloudDaily) localSaveTasks(`${date}_daily`, cloudDaily);
+        }
 
         const cloudWakeup = await loadTimeRecordCloud(date, 'wakeup');
         const cloudSleep = await loadTimeRecordCloud(date, 'sleep');
