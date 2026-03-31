@@ -58,7 +58,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
     inspiration: inspirations['3/31'].description,
     todayTasks: [
       { id: 1, text: '申告書の再提出', completed: false, category: 'morning' },
-      { id: 2, text: '個人事業税の支払い', completed: false, category: 'morning' },
+      { id: 2, text: '消費税の支払い', completed: false, category: 'morning' },
       { id: 3, text: 'YORKYSブランチのメニュー部分構築', completed: false, category: 'work' },
       { id: 6, text: 'YORKYS FROMAのカード修正', completed: false, category: 'work' },
       { id: 4, text: '筋トレ', completed: false, category: 'evening' },

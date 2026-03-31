@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'sesuji_week_tasks';
 const TIME_STORAGE_KEY = 'sesuji_week_times';
 const VERSION_KEY = 'sesuji_version';
-const CURRENT_VERSION = '3';
+const CURRENT_VERSION = '4';
 
 // バージョンが変わったらdailyデータをクリア
 export const checkVersion = () => {
