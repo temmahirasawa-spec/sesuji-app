@@ -539,6 +539,30 @@
   gap: 0.5rem;
 }
 
+/* Category Group Headers */
+.taskGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.25rem 0.15rem;
+  margin-top: 0.5rem;
+}
+
+.taskGroupHeader:first-child {
+  margin-top: 0;
+}
+
+.taskGroupIcon {
+  font-size: 0.8rem;
+}
+
+.taskGroupLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+}
+
 .taskItem {
   display: flex;
   align-items: center;

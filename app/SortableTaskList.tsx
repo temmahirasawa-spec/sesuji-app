@@ -114,25 +114,55 @@ export default function SortableTaskList({ tasks, date, type, editingTask, editT
     onReorder(date, type, reordered);
   };
 
+  // カテゴリ順にグループ化（ドラッグはカテゴリ内で動作）
+  const categoryOrder = ['morning', 'work', 'evening', 'night'];
+  const grouped: { cat: string; tasks: Task[] }[] = [];
+  const seen = new Set<string>();
+
+  // まずカテゴリ順にグループを作成
+  for (const cat of categoryOrder) {
+    const catTasks = tasks.filter(t => (t.category || 'morning') === cat);
+    if (catTasks.length > 0) {
+      grouped.push({ cat, tasks: catTasks });
+      seen.add(cat);
+    }
+  }
+  // 未知のカテゴリがあれば末尾に
+  const remaining = tasks.filter(t => !seen.has(t.category || 'morning'));
+  if (remaining.length > 0) {
+    grouped.push({ cat: 'other', tasks: remaining });
+  }
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={tasks.map(t => `${type}_${t.id}`)} strategy={verticalListSortingStrategy}>
         <div className={s.tasksList}>
-          {tasks.map(task => {
-            const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
+          {grouped.map(group => {
+            const catInfo = CATEGORY_OPTIONS.find(c => c.value === group.cat);
             return (
-              <SortableTaskItem
-                key={`${type}_${task.id}`}
-                task={task} type={type}
-                isEditing={isEditing}
-                editText={editText} setEditText={setEditText}
-                editCategory={editCategory} setEditCategory={setEditCategory}
-                submitEdit={submitEdit} cancelEdit={cancelEdit}
-                startEdit={() => startEdit(date, task.id, type, task.text, task.category)}
-                onDelete={() => deleteTask(date, task.id, type)}
-                onSetStatus={(status) => setTaskStatus(date, task.id, type, status)}
-                styles={s}
-              />
+              <div key={group.cat}>
+                <div className={s.taskGroupHeader}>
+                  <span className={s.taskGroupIcon}>{catInfo?.label.split(' ')[0] || ''}</span>
+                  <span className={s.taskGroupLabel}>{catInfo?.label.split(' ')[1] || group.cat.toUpperCase()}</span>
+                </div>
+                {group.tasks.map(task => {
+                  const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
+                  return (
+                    <SortableTaskItem
+                      key={`${type}_${task.id}`}
+                      task={task} type={type}
+                      isEditing={isEditing}
+                      editText={editText} setEditText={setEditText}
+                      editCategory={editCategory} setEditCategory={setEditCategory}
+                      submitEdit={submitEdit} cancelEdit={cancelEdit}
+                      startEdit={() => startEdit(date, task.id, type, task.text, task.category)}
+                      onDelete={() => deleteTask(date, task.id, type)}
+                      onSetStatus={(status) => setTaskStatus(date, task.id, type, status)}
+                      styles={s}
+                    />
+                  );
+                })}
+              </div>
             );
           })}
         </div>
