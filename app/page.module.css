@@ -541,30 +541,6 @@
   color: var(--color-text-muted);
 }
 
-/* Task Groups (category) */
-.taskGroup {
-  margin-bottom: 0.75rem;
-}
-
-.taskGroupHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.4rem;
-  padding-left: 0.25rem;
-}
-
-.taskGroupIcon {
-  font-size: 0.8rem;
-}
-
-.taskGroupLabel {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  letter-spacing: 0.1em;
-}
-
 /* Tasks List */
 .tasksList {
   display: flex;
@@ -575,18 +551,25 @@
 .taskItem {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .taskItem:hover {
   border-color: var(--color-primary-light);
   background: rgba(99, 102, 241, 0.02);
+}
+
+.taskItem:hover .taskActions {
+  opacity: 1;
+}
+
+.taskItem:hover .taskReorder {
+  opacity: 1;
 }
 
 .taskItemDaily {
@@ -638,6 +621,177 @@
 @keyframes popIn {
   0% { transform: scale(0); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+/* Task Label (checkbox + text wrapper) */
+.taskLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+/* Reorder Buttons */
+.taskReorder {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.taskMoveBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.taskMoveBtn:hover:not(:disabled) {
+  color: var(--color-primary);
+}
+
+.taskMoveBtn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+/* Task Actions (edit/delete) */
+.taskActions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.taskActionBtn {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.taskActionBtn:hover {
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.taskActionDelete:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Edit Row */
+.taskEditRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-primary-light);
+  border-radius: var(--radius-sm);
+}
+
+.taskEditInput {
+  flex: 1;
+  font-size: 0.85rem;
+  font-family: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  outline: none;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.taskEditInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.taskEditSave {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-surface);
+  background: var(--color-primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.taskEditSave:hover {
+  background: var(--color-primary-dark);
+}
+
+.taskEditCancel {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.taskEditCancel:hover {
+  color: var(--color-text);
+}
+
+/* Add Task */
+.addTaskBtn {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: none;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.addTaskBtn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.addTaskForm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.addCategorySelect {
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+}
+
+.addCategorySelect:focus {
+  border-color: var(--color-primary);
 }
 
 /* Week View */

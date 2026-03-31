@@ -178,16 +178,6 @@ interface Celebration {
   y: number;
 }
 
-function groupByCategory(tasks: Task[]) {
-  const groups: { [cat: string]: Task[] } = {};
-  for (const task of tasks) {
-    const cat = task.category || 'morning';
-    if (!groups[cat]) groups[cat] = [];
-    groups[cat].push(task);
-  }
-  return groups;
-}
-
 function calcTimeDiff(target: string, actual: string): string {
   if (!actual) return '';
   const [th, tm] = target.split(':').map(Number);
@@ -211,6 +201,11 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState('3/31');
   const [timeRecords, setTimeRecords] = useState<{ [key: string]: string }>({});
+  const [editingTask, setEditingTask] = useState<{ date: string; id: number; type: 'today' | 'daily' } | null>(null);
+  const [editText, setEditText] = useState('');
+  const [addingTo, setAddingTo] = useState<{ date: string; type: 'today' | 'daily' } | null>(null);
+  const [addText, setAddText] = useState('');
+  const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
 
   useEffect(() => {
     const loaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
@@ -260,6 +255,54 @@ export default function Home() {
     }
   };
 
+  const addTask = (date: string, type: 'today' | 'daily', text: string, category: 'morning' | 'work' | 'evening' | 'night') => {
+    const newTasks = { ...weekTasks };
+    const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
+    const maxId = taskList.length > 0 ? Math.max(...taskList.map(t => t.id)) : 0;
+    taskList.push({ id: maxId + 1, text, completed: false, category });
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_${type}`, taskList);
+    updateProgress(newTasks);
+  };
+
+  const editTask = (date: string, taskId: number, type: 'today' | 'daily', newText: string) => {
+    const newTasks = { ...weekTasks };
+    const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
+    const task = taskList.find(t => t.id === taskId);
+    if (task) {
+      task.text = newText;
+      setWeekTasks({ ...newTasks });
+      saveTasks(`${date}_${type}`, taskList);
+    }
+  };
+
+  const moveTask = (date: string, type: 'today' | 'daily', fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    const newTasks = { ...weekTasks };
+    const taskList = type === 'today' ? [...newTasks[date].today] : [...newTasks[date].daily];
+    const [moved] = taskList.splice(fromIndex, 1);
+    taskList.splice(toIndex, 0, moved);
+    if (type === 'today') {
+      newTasks[date] = { ...newTasks[date], today: taskList };
+    } else {
+      newTasks[date] = { ...newTasks[date], daily: taskList };
+    }
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_${type}`, taskList);
+  };
+
+  const deleteTask = (date: string, taskId: number, type: 'today' | 'daily') => {
+    const newTasks = { ...weekTasks };
+    if (type === 'today') {
+      newTasks[date].today = newTasks[date].today.filter(t => t.id !== taskId);
+    } else {
+      newTasks[date].daily = newTasks[date].daily.filter(t => t.id !== taskId);
+    }
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_${type}`, type === 'today' ? newTasks[date].today : newTasks[date].daily);
+    updateProgress(newTasks);
+  };
+
   const createCelebration = (e: React.MouseEvent) => {
     const id = Math.random().toString(36).substring(2, 11);
     setCelebrations(prev => [...prev, { id, x: e.clientX, y: e.clientY }]);
@@ -291,26 +334,109 @@ export default function Home() {
 
   const dates = Object.keys(WEEK_DATA);
 
-  const renderTaskGroup = (tasks: Task[], date: string, type: 'today' | 'daily', cat: string) => (
-    <div key={cat} className={styles.taskGroup}>
-      <div className={styles.taskGroupHeader}>
-        <span className={styles.taskGroupIcon}>{CATEGORY_LABELS[cat]?.icon}</span>
-        <span className={styles.taskGroupLabel}>{CATEGORY_LABELS[cat]?.label}</span>
-      </div>
-      {tasks.map(task => (
-        <label key={`${type}_${task.id}`} className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : ''} ${type === 'daily' ? styles.taskItemDaily : ''}`}>
-          <input
-            type="checkbox"
-            checked={task.completed}
-            onChange={(e) => toggleTask(date, task.id, type, e)}
-            className={styles.taskCheckbox}
-          />
-          <span className={styles.taskText}>{task.text}</span>
-          {task.completed && <span className={styles.taskCheck}>&#10003;</span>}
-        </label>
-      ))}
+  const startEdit = (date: string, id: number, type: 'today' | 'daily', text: string) => {
+    setEditingTask({ date, id, type });
+    setEditText(text);
+  };
+
+  const submitEdit = () => {
+    if (editingTask && editText.trim()) {
+      editTask(editingTask.date, editingTask.id, editingTask.type, editText.trim());
+    }
+    setEditingTask(null);
+    setEditText('');
+  };
+
+  const startAdd = (date: string, type: 'today' | 'daily') => {
+    setAddingTo({ date, type });
+    setAddText('');
+    setAddCategory('morning');
+  };
+
+  const submitAdd = () => {
+    if (addingTo && addText.trim()) {
+      addTask(addingTo.date, addingTo.type, addText.trim(), addCategory);
+    }
+    setAddingTo(null);
+    setAddText('');
+  };
+
+  const renderTaskList = (tasks: Task[], allTasks: Task[], date: string, type: 'today' | 'daily') => (
+    <div className={styles.tasksList}>
+      {tasks.map(task => {
+        const globalIndex = allTasks.findIndex(t => t.id === task.id);
+        const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
+        const isFirst = globalIndex === 0;
+        const isLast = globalIndex === allTasks.length - 1;
+        return isEditing ? (
+          <div key={`${type}_${task.id}`} className={styles.taskEditRow}>
+            <input
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submitEdit(); if (e.key === 'Escape') setEditingTask(null); }}
+              className={styles.taskEditInput}
+              autoFocus
+            />
+            <button onClick={submitEdit} className={styles.taskEditSave}>OK</button>
+            <button onClick={() => setEditingTask(null)} className={styles.taskEditCancel}>&#10005;</button>
+          </div>
+        ) : (
+          <div key={`${type}_${task.id}`} className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : ''} ${type === 'daily' ? styles.taskItemDaily : ''}`}>
+            <div className={styles.taskReorder}>
+              <button disabled={isFirst} onClick={() => moveTask(date, type, globalIndex, globalIndex - 1)} className={styles.taskMoveBtn} title="上へ">&#9650;</button>
+              <button disabled={isLast} onClick={() => moveTask(date, type, globalIndex, globalIndex + 1)} className={styles.taskMoveBtn} title="下へ">&#9660;</button>
+            </div>
+            <label className={styles.taskLabel}>
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={(e) => toggleTask(date, task.id, type, e)}
+                className={styles.taskCheckbox}
+              />
+              <span className={styles.taskText}>{task.text}</span>
+              {task.completed && <span className={styles.taskCheck}>&#10003;</span>}
+            </label>
+            <div className={styles.taskActions}>
+              <button onClick={() => startEdit(date, task.id, type, task.text)} className={styles.taskActionBtn} title="編集">&#9998;</button>
+              <button onClick={() => deleteTask(date, task.id, type)} className={`${styles.taskActionBtn} ${styles.taskActionDelete}`} title="削除">&#10005;</button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
+
+  const renderAddForm = (date: string, type: 'today' | 'daily') => {
+    const isAdding = addingTo?.date === date && addingTo?.type === type;
+    if (!isAdding) {
+      return (
+        <button onClick={() => startAdd(date, type)} className={styles.addTaskBtn}>
+          + タスクを追加
+        </button>
+      );
+    }
+    return (
+      <div className={styles.addTaskForm}>
+        <input
+          type="text"
+          value={addText}
+          onChange={(e) => setAddText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') submitAdd(); if (e.key === 'Escape') setAddingTo(null); }}
+          placeholder="タスク名を入力..."
+          className={styles.taskEditInput}
+          autoFocus
+        />
+        <select value={addCategory} onChange={(e) => setAddCategory(e.target.value as any)} className={styles.addCategorySelect}>
+          {CATEGORY_ORDER.map(cat => (
+            <option key={cat} value={cat}>{CATEGORY_LABELS[cat].icon} {CATEGORY_LABELS[cat].label}</option>
+          ))}
+        </select>
+        <button onClick={submitAdd} className={styles.taskEditSave}>追加</button>
+        <button onClick={() => setAddingTo(null)} className={styles.taskEditCancel}>&#10005;</button>
+      </div>
+    );
+  };
 
   const renderTimeTracker = (date: string, type: 'wakeup' | 'sleep', target: string, label: string) => {
     const actual = timeRecords[`${date}_${type}`] || '';
@@ -352,9 +478,6 @@ export default function Home() {
     const dayProgress = getDayProgress(date);
     const allTasks = [...tasks.today, ...tasks.daily];
     const completedCount = allTasks.filter(t => t.completed).length;
-
-    const todayGroups = groupByCategory(tasks.today);
-    const dailyGroups = groupByCategory(tasks.daily);
 
     return (
       <div
@@ -414,11 +537,8 @@ export default function Home() {
                 <span className={styles.taskSectionBadge}>TODAY</span>
                 <span className={styles.taskSectionSub}>{date}のタスク</span>
               </h4>
-              {CATEGORY_ORDER.map(cat =>
-                todayGroups[cat] && todayGroups[cat].length > 0
-                  ? renderTaskGroup(todayGroups[cat], date, 'today', cat)
-                  : null
-              )}
+              {renderTaskList(tasks.today, tasks.today, date, 'today')}
+              {renderAddForm(date, 'today')}
             </div>
 
             {/* DAILY ROUTINE tasks */}
@@ -427,11 +547,8 @@ export default function Home() {
                 <span className={styles.taskSectionBadgeDaily}>DAILY</span>
                 <span className={styles.taskSectionSub}>毎日のルーティン</span>
               </h4>
-              {CATEGORY_ORDER.map(cat =>
-                dailyGroups[cat] && dailyGroups[cat].length > 0
-                  ? renderTaskGroup(dailyGroups[cat], date, 'daily', cat)
-                  : null
-              )}
+              {renderTaskList(tasks.daily, tasks.daily, date, 'daily')}
+              {renderAddForm(date, 'daily')}
             </div>
           </>
         )}
