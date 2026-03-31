@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Task, DayPlan } from '@/lib/types';
 import { saveTasks, loadTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import styles from './page.module.css';
 
 // ============================
@@ -161,6 +164,66 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
 };
 
+// ============================
+// Sortable Task Item Component
+// ============================
+function SortableTaskItem({ task, date, type, isEditing, editText, setEditText, submitEdit, setEditingTask, startEdit, deleteTask, toggleTask, styles: s }: {
+  task: Task; date: string; type: 'today' | 'daily';
+  isEditing: boolean; editText: string; setEditText: (v: string) => void;
+  submitEdit: () => void; setEditingTask: (v: any) => void;
+  startEdit: (date: string, id: number, type: 'today' | 'daily', text: string) => void;
+  deleteTask: (date: string, id: number, type: 'today' | 'daily') => void;
+  toggleTask: (date: string, id: number, type: 'today' | 'daily', e?: any) => void;
+  styles: any;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `${type}_${task.id}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  if (isEditing) {
+    return (
+      <div ref={setNodeRef} style={style} className={s.taskEditRow}>
+        <input
+          type="text"
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') submitEdit(); if (e.key === 'Escape') setEditingTask(null); }}
+          className={s.taskEditInput}
+          autoFocus
+        />
+        <button onClick={submitEdit} className={s.taskEditSave}>OK</button>
+        <button onClick={() => setEditingTask(null)} className={s.taskEditCancel}>&#10005;</button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className={`${s.taskItem} ${task.completed ? s.taskCompleted : ''} ${type === 'daily' ? s.taskItemDaily : ''}`}>
+      <div className={s.taskDragHandle} {...attributes} {...listeners}>
+        <span>&#8942;&#8942;</span>
+      </div>
+      <label className={s.taskLabel}>
+        <input
+          type="checkbox"
+          checked={task.completed}
+          onChange={(e) => toggleTask(date, task.id, type, e)}
+          className={s.taskCheckbox}
+        />
+        <span className={s.taskText}>{task.text}</span>
+        {task.completed && <span className={s.taskCheck}>&#10003;</span>}
+      </label>
+      <div className={s.taskActions}>
+        <button onClick={() => startEdit(date, task.id, type, task.text)} className={s.taskActionBtn} title="編集">&#9998;</button>
+        <button onClick={() => deleteTask(date, task.id, type)} className={`${s.taskActionBtn} ${s.taskActionDelete}`} title="削除">&#10005;</button>
+      </div>
+    </div>
+  );
+}
+
 const CATEGORY_LABELS: { [key: string]: { label: string; icon: string } } = {
   morning: { label: 'MORNING', icon: '☀' },
   work: { label: 'WORK', icon: '💻' },
@@ -308,21 +371,6 @@ export default function Home() {
     }
   };
 
-  const moveTask = (date: string, type: 'today' | 'daily', fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return;
-    const newTasks = { ...weekTasks };
-    const taskList = type === 'today' ? [...newTasks[date].today] : [...newTasks[date].daily];
-    const [moved] = taskList.splice(fromIndex, 1);
-    taskList.splice(toIndex, 0, moved);
-    if (type === 'today') {
-      newTasks[date] = { ...newTasks[date], today: taskList };
-    } else {
-      newTasks[date] = { ...newTasks[date], daily: taskList };
-    }
-    setWeekTasks({ ...newTasks });
-    saveTasks(`${date}_${type}`, taskList);
-  };
-
   const deleteTask = (date: string, taskId: number, type: 'today' | 'daily') => {
     const newTasks = { ...weekTasks };
     if (type === 'today') {
@@ -393,50 +441,56 @@ export default function Home() {
     setAddText('');
   };
 
-  const renderTaskList = (tasks: Task[], allTasks: Task[], date: string, type: 'today' | 'daily') => (
-    <div className={styles.tasksList}>
-      {tasks.map(task => {
-        const globalIndex = allTasks.findIndex(t => t.id === task.id);
-        const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
-        const isFirst = globalIndex === 0;
-        const isLast = globalIndex === allTasks.length - 1;
-        return isEditing ? (
-          <div key={`${type}_${task.id}`} className={styles.taskEditRow}>
-            <input
-              type="text"
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') submitEdit(); if (e.key === 'Escape') setEditingTask(null); }}
-              className={styles.taskEditInput}
-              autoFocus
-            />
-            <button onClick={submitEdit} className={styles.taskEditSave}>OK</button>
-            <button onClick={() => setEditingTask(null)} className={styles.taskEditCancel}>&#10005;</button>
-          </div>
-        ) : (
-          <div key={`${type}_${task.id}`} className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : ''} ${type === 'daily' ? styles.taskItemDaily : ''}`}>
-            <div className={styles.taskReorder}>
-              <button disabled={isFirst} onClick={() => moveTask(date, type, globalIndex, globalIndex - 1)} className={styles.taskMoveBtn} title="上へ">&#9650;</button>
-              <button disabled={isLast} onClick={() => moveTask(date, type, globalIndex, globalIndex + 1)} className={styles.taskMoveBtn} title="下へ">&#9660;</button>
-            </div>
-            <label className={styles.taskLabel}>
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={(e) => toggleTask(date, task.id, type, e)}
-                className={styles.taskCheckbox}
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  const handleDragEnd = (date: string, type: 'today' | 'daily') => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const tasks = type === 'today' ? weekTasks[date].today : weekTasks[date].daily;
+    const oldIndex = tasks.findIndex(t => `${type}_${t.id}` === active.id);
+    const newIndex = tasks.findIndex(t => `${type}_${t.id}` === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(tasks, oldIndex, newIndex);
+    const newTasks = { ...weekTasks };
+    if (type === 'today') {
+      newTasks[date] = { ...newTasks[date], today: reordered };
+    } else {
+      newTasks[date] = { ...newTasks[date], daily: reordered };
+    }
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_${type}`, reordered);
+  };
+
+  const renderTaskList = (tasks: Task[], date: string, type: 'today' | 'daily') => (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(date, type)}>
+      <SortableContext items={tasks.map(t => `${type}_${t.id}`)} strategy={verticalListSortingStrategy}>
+        <div className={styles.tasksList}>
+          {tasks.map(task => {
+            const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
+            return (
+              <SortableTaskItem
+                key={`${type}_${task.id}`}
+                task={task}
+                date={date}
+                type={type}
+                isEditing={isEditing}
+                editText={editText}
+                setEditText={setEditText}
+                submitEdit={submitEdit}
+                setEditingTask={setEditingTask}
+                startEdit={startEdit}
+                deleteTask={deleteTask}
+                toggleTask={toggleTask}
+                styles={styles}
               />
-              <span className={styles.taskText}>{task.text}</span>
-              {task.completed && <span className={styles.taskCheck}>&#10003;</span>}
-            </label>
-            <div className={styles.taskActions}>
-              <button onClick={() => startEdit(date, task.id, type, task.text)} className={styles.taskActionBtn} title="編集">&#9998;</button>
-              <button onClick={() => deleteTask(date, task.id, type)} className={`${styles.taskActionBtn} ${styles.taskActionDelete}`} title="削除">&#10005;</button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+            );
+          })}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 
   const renderAddForm = (date: string, type: 'today' | 'daily') => {
@@ -569,7 +623,7 @@ export default function Home() {
                 <span className={styles.taskSectionBadge}>TODAY</span>
                 <span className={styles.taskSectionSub}>{date}のタスク</span>
               </h4>
-              {renderTaskList(tasks.today, tasks.today, date, 'today')}
+              {renderTaskList(tasks.today, date, 'today')}
               {renderAddForm(date, 'today')}
             </div>
 
@@ -579,7 +633,7 @@ export default function Home() {
                 <span className={styles.taskSectionBadgeDaily}>DAILY</span>
                 <span className={styles.taskSectionSub}>毎日のルーティン</span>
               </h4>
-              {renderTaskList(tasks.daily, tasks.daily, date, 'daily')}
+              {renderTaskList(tasks.daily, date, 'daily')}
               {renderAddForm(date, 'daily')}
             </div>
           </>
