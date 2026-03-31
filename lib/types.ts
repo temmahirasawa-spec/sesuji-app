@@ -2,7 +2,12 @@ export interface Task {
   id: number;
   text: string;
   completed: boolean;
-  category?: 'daily' | 'today';
+  category?: 'morning' | 'work' | 'evening' | 'night';
+}
+
+export interface TimeRecord {
+  target: string;    // e.g. "08:00"
+  actual: string;    // e.g. "09:00"
 }
 
 export interface DayPlan {
@@ -12,14 +17,7 @@ export interface DayPlan {
   inspiration: string;
   todayTasks: Task[];
   dailyTasks: Task[];
-  goal: string;
+  goals: string[];
   milestoneTitle: string;
   milestoneDescription: string;
-}
-
-export interface AppState {
-  [key: string]: {
-    todayTasks: Task[];
-    dailyTasks: Task[];
-  };
 }
