@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Task, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, saveTimeRecord, loadTimeRecord } from '@/lib/storage';
+import { saveTasks, loadTasks, saveTimeRecord, loadTimeRecord, checkVersion } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import styles from './page.module.css';
 
@@ -212,6 +212,7 @@ export default function Home() {
   const [timeRecords, setTimeRecords] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
+    checkVersion();
     const loaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
     const times: { [key: string]: string } = {};
     Object.keys(WEEK_DATA).forEach(date => {
