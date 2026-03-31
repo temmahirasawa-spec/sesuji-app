@@ -37,19 +37,17 @@
 
 /* Header */
 .header {
-  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: 0.75rem 0;
+  padding: 0.5rem 0;
   position: sticky;
   top: 0;
   z-index: 100;
   backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .headerTop {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
 }
@@ -57,7 +55,7 @@
 .headerTitleRow {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   flex: 1;
   min-width: 0;
 }
@@ -778,29 +776,7 @@
   border-color: var(--color-primary);
 }
 
-/* Week View */
-.weekViewSection {
-  padding: 1.5rem 0 3rem;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.weekGrid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.75rem;
-}
-
-@media (max-width: 1024px) {
-  .weekGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .weekGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
+/* (Week grid view removed) */
 
 /* Week List View */
 .weekListSection {
@@ -814,6 +790,21 @@
   border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   margin-bottom: 0.75rem;
+}
+
+.weekListDayToday {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-sm);
+}
+
+.weekListTodayBadge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--color-surface);
+  background: var(--color-primary);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
 }
 
 .weekListDayHeader {
@@ -949,21 +940,35 @@
     padding: 0 1rem;
   }
 
+  .header {
+    padding: 0.4rem 0;
+  }
+
   .headerTop {
-    flex-wrap: wrap;
     gap: 0.5rem;
   }
 
   .headerTitleRow {
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .title {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .progressValueInline {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  .viewBtn {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  .daySelector {
+    margin-top: 0.35rem;
+    gap: 0.25rem;
+    padding-bottom: 0.2rem;
   }
 
   .dayCard {
@@ -1022,23 +1027,17 @@
     justify-content: center;
   }
 
-  /* Mobile: bigger buttons */
-  .viewBtn {
-    padding: 0.6rem 1.2rem;
-    font-size: 0.85rem;
-  }
-
   .daySelectorBtn {
-    padding: 0.5rem 0.65rem;
-    min-width: 54px;
+    padding: 0.4rem 0.5rem;
+    min-width: 48px;
   }
 
   .daySelectorDay {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
 
   .daySelectorDate {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
   .addTaskBtn {

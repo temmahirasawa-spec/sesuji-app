@@ -172,7 +172,7 @@ const CATEGORY_LABELS: { [key: string]: { label: string; icon: string } } = {
 
 const CATEGORY_ORDER = ['morning', 'work', 'evening', 'night'];
 
-type ViewMode = 'day' | 'week' | 'weeklist';
+type ViewMode = 'day' | 'list';
 
 interface Celebration {
   id: string;
@@ -476,7 +476,7 @@ export default function Home() {
     return (
       <div
         key={date}
-        className={`${styles.dayCard} ${compact ? styles.dayCardCompact : ''} ${selectedDate === date && viewMode === 'week' ? styles.dayCardActive : ''}`}
+        className={`${styles.dayCard} ${compact ? styles.dayCardCompact : ''}`}
         onClick={compact ? () => { setSelectedDate(date); setViewMode('day'); } : undefined}
       >
         <div className={styles.dayHeader}>
@@ -570,8 +570,7 @@ export default function Home() {
             </div>
             <div className={styles.viewToggle}>
               <button className={`${styles.viewBtn} ${viewMode === 'day' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('day')}>Day</button>
-              <button className={`${styles.viewBtn} ${viewMode === 'weeklist' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('weeklist')}>List</button>
-              <button className={`${styles.viewBtn} ${viewMode === 'week' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('week')}>Week</button>
+              <button className={`${styles.viewBtn} ${viewMode === 'list' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('list')}>List</button>
             </div>
           </div>
           {viewMode === 'day' && (
@@ -601,73 +600,73 @@ export default function Home() {
         </section>
       )}
 
-      {viewMode === 'weeklist' && (
-        <section className={styles.weekListSection}>
-          <div className={styles.container}>
-            {dates.map(date => {
-              const dayData = WEEK_DATA[date];
-              const tasks = weekTasks[date];
-              if (!tasks) return null;
-              const allTasks = [...tasks.today, ...tasks.daily];
-              const completedCount = allTasks.filter(t => t.completed).length;
-              const dayProgress = getDayProgress(date);
+      {viewMode === 'list' && (() => {
+        const todayDate = '3/31';
+        const todayIdx = dates.indexOf(todayDate);
+        const sortedDates = todayIdx >= 0
+          ? [...dates.slice(todayIdx), ...dates.slice(0, todayIdx)]
+          : dates;
 
-              const groupedToday: { [cat: string]: Task[] } = {};
-              tasks.today.forEach(t => {
-                const cat = t.category || 'morning';
-                if (!groupedToday[cat]) groupedToday[cat] = [];
-                groupedToday[cat].push(t);
-              });
+        return (
+          <section className={styles.weekListSection}>
+            <div className={styles.container}>
+              {sortedDates.map(date => {
+                const dayData = WEEK_DATA[date];
+                const tasks = weekTasks[date];
+                if (!tasks) return null;
+                const allTasks = [...tasks.today, ...tasks.daily];
+                const completedCount = allTasks.filter(t => t.completed).length;
+                const dayProgress = getDayProgress(date);
+                const isToday = date === todayDate;
 
-              return (
-                <div key={date} className={styles.weekListDay}>
-                  <div className={styles.weekListDayHeader} onClick={() => { setSelectedDate(date); setViewMode('day'); }}>
-                    <div className={styles.weekListDayInfo}>
-                      <span className={styles.weekListDate}>{date}</span>
-                      <span className={styles.weekListDayOfWeek}>({dayData.day})</span>
-                      <span className={styles.weekListFocus}>{dayData.focus}</span>
+                const groupedToday: { [cat: string]: Task[] } = {};
+                tasks.today.forEach(t => {
+                  const cat = t.category || 'morning';
+                  if (!groupedToday[cat]) groupedToday[cat] = [];
+                  groupedToday[cat].push(t);
+                });
+
+                return (
+                  <div key={date} className={`${styles.weekListDay} ${isToday ? styles.weekListDayToday : ''}`}>
+                    <div className={styles.weekListDayHeader} onClick={() => { setSelectedDate(date); setViewMode('day'); }}>
+                      <div className={styles.weekListDayInfo}>
+                        {isToday && <span className={styles.weekListTodayBadge}>TODAY</span>}
+                        <span className={styles.weekListDate}>{date}</span>
+                        <span className={styles.weekListDayOfWeek}>({dayData.day})</span>
+                        <span className={styles.weekListFocus}>{dayData.focus}</span>
+                      </div>
+                      <div className={styles.weekListStats}>
+                        <span className={styles.weekListCount}>{completedCount}/{allTasks.length}</span>
+                      </div>
                     </div>
-                    <div className={styles.weekListStats}>
-                      <span className={styles.weekListCount}>{completedCount}/{allTasks.length}</span>
+                    <div className={styles.weekListProgress}>
+                      <div className={styles.weekListProgressFill} style={{ width: `${dayProgress}%` }}></div>
                     </div>
-                  </div>
-                  <div className={styles.weekListProgress}>
-                    <div className={styles.weekListProgressFill} style={{ width: `${dayProgress}%` }}></div>
-                  </div>
-                  <div className={styles.weekListTasks}>
-                    {CATEGORY_ORDER.map(cat => {
-                      const catTasks = (groupedToday[cat] || []);
-                      if (catTasks.length === 0) return null;
-                      return (
-                        <div key={cat} className={styles.weekListCategory}>
-                          <span className={styles.weekListCategoryIcon}>{CATEGORY_LABELS[cat].icon}</span>
-                          <div className={styles.weekListCategoryTasks}>
-                            {catTasks.map(t => (
-                              <span key={t.id} className={`${styles.weekListTask} ${t.completed ? styles.weekListTaskDone : ''}`}>
-                                {t.text}
-                              </span>
-                            ))}
+                    <div className={styles.weekListTasks}>
+                      {CATEGORY_ORDER.map(cat => {
+                        const catTasks = (groupedToday[cat] || []);
+                        if (catTasks.length === 0) return null;
+                        return (
+                          <div key={cat} className={styles.weekListCategory}>
+                            <span className={styles.weekListCategoryIcon}>{CATEGORY_LABELS[cat].icon}</span>
+                            <div className={styles.weekListCategoryTasks}>
+                              {catTasks.map(t => (
+                                <span key={t.id} className={`${styles.weekListTask} ${t.completed ? styles.weekListTaskDone : ''}`}>
+                                  {t.text}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {viewMode === 'week' && (
-        <section className={styles.weekViewSection}>
-          <div className={styles.container}>
-            <div className={styles.weekGrid}>
-              {dates.map(date => renderDayCard(date, true))}
+                );
+              })}
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        );
+      })()}
 
       <footer className={styles.footer}>
         <div className={styles.container}>

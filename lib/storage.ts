@@ -66,17 +66,19 @@ export const loadTimeRecordCloud = async (date: string, type: 'wakeup' | 'sleep'
 export const mergeTasks = (defaults: Task[], saved: Task[] | null): Task[] => {
   if (!saved || saved.length === 0) return defaults.map(t => ({ ...t }));
 
-  // If saved has custom tasks (added by user), keep them
-  const defaultIds = new Set(defaults.map(t => t.id));
-  const customTasks = saved.filter(t => !defaultIds.has(t.id));
+  const defaultMap = new Map<number, Task>();
+  defaults.forEach(t => defaultMap.set(t.id, t));
 
-  const savedMap = new Map<number, Task>();
-  saved.forEach(t => savedMap.set(t.id, t));
-
-  const merged = defaults.map(t => {
-    const s = savedMap.get(t.id);
-    return s ? { ...t, completed: s.completed, text: s.text } : { ...t };
+  // Use saved order as the base - this preserves drag-and-drop reordering
+  const merged = saved.map(t => {
+    const d = defaultMap.get(t.id);
+    // Keep saved state (completed, text, order) but use default category if available
+    return d ? { ...d, completed: t.completed, text: t.text } : { ...t };
   });
 
-  return [...merged, ...customTasks];
+  // Add any new defaults that weren't in saved data
+  const savedIds = new Set(saved.map(t => t.id));
+  const newDefaults = defaults.filter(t => !savedIds.has(t.id));
+
+  return [...merged, ...newDefaults.map(t => ({ ...t }))];
 };
