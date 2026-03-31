@@ -473,22 +473,33 @@ export default function Home() {
     saveTasks(`${date}_${type}`, reordered);
   };
 
-  const handleVoiceTasksConfirmed = (date: string, parsed: ParsedTask[]) => {
-    const newTasks = { ...weekTasks };
-    const todayList = [...newTasks[date].today];
-    const maxId = todayList.length > 0 ? Math.max(...todayList.map(t => t.id)) : 0;
-    parsed.forEach((p, i) => {
-      todayList.push({
-        id: maxId + 1 + i,
-        text: p.text,
-        completed: false,
-        category: p.category,
+  const handleVoiceTasksConfirmed = async (date: string, parsed: ParsedTask[]) => {
+    // API が既に Supabase に保存済み → クラウドから最新データを取得して反映
+    const cloudToday = await loadTasksCloud(`${date}_today`);
+    if (cloudToday) {
+      const newTasks = { ...weekTasks };
+      newTasks[date] = { ...newTasks[date], today: cloudToday };
+      setWeekTasks({ ...newTasks });
+      localSaveTasks(`${date}_today`, cloudToday);
+      updateProgress(newTasks);
+    } else {
+      // フォールバック: クラウドから取得できなかった場合はローカルで追加
+      const newTasks = { ...weekTasks };
+      const todayList = [...newTasks[date].today];
+      const maxId = todayList.length > 0 ? Math.max(...todayList.map(t => t.id)) : 0;
+      parsed.forEach((p, i) => {
+        todayList.push({
+          id: maxId + 1 + i,
+          text: p.text,
+          completed: false,
+          category: p.category,
+        });
       });
-    });
-    newTasks[date] = { ...newTasks[date], today: todayList };
-    setWeekTasks({ ...newTasks });
-    saveTasks(`${date}_today`, todayList);
-    updateProgress(newTasks);
+      newTasks[date] = { ...newTasks[date], today: todayList };
+      setWeekTasks({ ...newTasks });
+      saveTasks(`${date}_today`, todayList);
+      updateProgress(newTasks);
+    }
   };
 
   const handleRating = (date: string, category: string, value: number) => {

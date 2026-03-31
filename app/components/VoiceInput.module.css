@@ -75,6 +75,21 @@
   font-weight: 500;
 }
 
+.success {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-success);
+  font-weight: 600;
+  animation: fadeInOut 3s ease-out forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 @media (max-width: 640px) {
   .inputRow {
     flex-direction: column;

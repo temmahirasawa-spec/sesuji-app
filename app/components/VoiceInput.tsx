@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ParsedTask } from '@/types/taskParsing';
 import TaskConfirmationFlow from './TaskConfirmationFlow';
 import styles from './VoiceInput.module.css';
@@ -15,11 +15,20 @@ export default function VoiceInput({ date, onTasksConfirmed }: VoiceInputProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [parsedTasks, setParsedTasks] = useState<ParsedTask[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // 成功メッセージを3秒後に消す
+  useEffect(() => {
+    if (!successMsg) return;
+    const timer = setTimeout(() => setSuccessMsg(null), 3000);
+    return () => clearTimeout(timer);
+  }, [successMsg]);
 
   const handleParse = async () => {
     if (!input.trim()) return;
     setIsLoading(true);
     setError(null);
+    setSuccessMsg(null);
 
     try {
       const res = await fetch('/api/parse-voice', {
@@ -47,6 +56,7 @@ export default function VoiceInput({ date, onTasksConfirmed }: VoiceInputProps) 
     onTasksConfirmed(tasks);
     setParsedTasks(null);
     setInput('');
+    setSuccessMsg(`${tasks.length}個のタスクを追加しました`);
   };
 
   const handleCancel = () => {
@@ -84,11 +94,13 @@ export default function VoiceInput({ date, onTasksConfirmed }: VoiceInputProps) 
           </button>
         </div>
         {error && <p className={styles.error}>{error}</p>}
+        {successMsg && <p className={styles.success}>{successMsg}</p>}
       </div>
 
       {parsedTasks && (
         <TaskConfirmationFlow
           tasks={parsedTasks}
+          date={date}
           onComplete={handleComplete}
           onCancel={handleCancel}
         />

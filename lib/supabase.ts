@@ -35,6 +35,18 @@ export async function cloudLoad(key: string): Promise<any | null> {
   }
 }
 
+// サーバーサイド用クライアント（API Route で使用）
+let serverClient: SupabaseClient | null = null;
+
+export function getServerClient(): SupabaseClient | null {
+  if (serverClient) return serverClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  serverClient = createClient(url, key);
+  return serverClient;
+}
+
 export async function cloudSave(key: string, value: any): Promise<void> {
   const client = getClient();
   if (!client) return;

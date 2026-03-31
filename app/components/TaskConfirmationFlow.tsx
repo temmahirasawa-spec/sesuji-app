@@ -13,13 +13,16 @@ const CATEGORY_DISPLAY: Record<TaskCategory, { label: string; icon: string; colo
 
 interface TaskConfirmationFlowProps {
   tasks: ParsedTask[];
+  date: string;
   onComplete: (tasks: ParsedTask[]) => void;
   onCancel: () => void;
 }
 
-export default function TaskConfirmationFlow({ tasks: initialTasks, onComplete, onCancel }: TaskConfirmationFlowProps) {
+export default function TaskConfirmationFlow({ tasks: initialTasks, date, onComplete, onCancel }: TaskConfirmationFlowProps) {
   const [tasks, setTasks] = useState<ParsedTask[]>(initialTasks.map(t => ({ ...t })));
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const total = tasks.length;
   const current = tasks[currentIndex];
@@ -31,9 +34,35 @@ export default function TaskConfirmationFlow({ tasks: initialTasks, onComplete, 
     setTasks(prev => prev.map((t, i) => i === currentIndex ? { ...t, ...updates } : t));
   };
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const res = await fetch('/api/save-voice-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks, date }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setSaveError(data.error || '保存に失敗しました');
+        return;
+      }
+
+      onComplete(tasks);
+    } catch (e: any) {
+      setSaveError('通信エラーが発生しました');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleNext = () => {
     if (isLast) {
-      onComplete(tasks);
+      handleSave();
     } else {
       setCurrentIndex(prev => prev + 1);
     }
@@ -85,6 +114,7 @@ export default function TaskConfirmationFlow({ tasks: initialTasks, onComplete, 
                 }
               }}
               autoFocus
+              disabled={isSaving}
             />
           </div>
 
@@ -97,6 +127,7 @@ export default function TaskConfirmationFlow({ tasks: initialTasks, onComplete, 
                   className={`${styles.categoryBtn} ${current.category === key ? styles.categoryBtnActive : ''}`}
                   style={current.category === key ? { background: val.color, borderColor: val.color } : {}}
                   onClick={() => updateCurrent({ category: key as TaskCategory })}
+                  disabled={isSaving}
                 >
                   <span className={styles.categoryBtnIcon}>{val.icon}</span>
                   <span className={styles.categoryBtnLabel}>{val.label}</span>
@@ -112,22 +143,24 @@ export default function TaskConfirmationFlow({ tasks: initialTasks, onComplete, 
           )}
         </div>
 
-        <p className={styles.confirmText}>これで作成しますか？</p>
+        {saveError && <p className={styles.saveError}>{saveError}</p>}
+        {!isSaving && <p className={styles.confirmText}>これで作成しますか？</p>}
+        {isSaving && <p className={styles.savingText}>保存中...</p>}
 
         {/* Actions */}
         <div className={styles.actions}>
-          <button className={styles.cancelBtn} onClick={onCancel}>
+          <button className={styles.cancelBtn} onClick={onCancel} disabled={isSaving}>
             キャンセル
           </button>
           <div className={styles.navBtns}>
             <button
               className={styles.prevBtn}
               onClick={handlePrev}
-              disabled={isFirst}
+              disabled={isFirst || isSaving}
             >
               &#8592; 前へ
             </button>
-            <button className={styles.nextBtn} onClick={handleNext}>
+            <button className={styles.nextBtn} onClick={handleNext} disabled={isSaving}>
               {isLast ? `完了 (${total}件追加)` : 'OK &#8594;'}
             </button>
           </div>
