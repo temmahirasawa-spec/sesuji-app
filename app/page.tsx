@@ -53,7 +53,7 @@ const makeDailyTasks = (date: string): Task[] => {
 const WEEK_DATA: { [key: string]: DayPlan } = {
   '3/31': {
     date: '3/31',
-    day: '月',
+    day: '火',
     focus: 'システム・リセット',
     inspiration: inspirations['3/31'].description,
     todayTasks: [
@@ -70,7 +70,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
   '4/1': {
     date: '4/1',
-    day: '火',
+    day: '水',
     focus: 'Training Day 1',
     inspiration: inspirations['4/1'].description,
     todayTasks: [
@@ -85,7 +85,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
   '4/2': {
     date: '4/2',
-    day: '水',
+    day: '木',
     focus: 'Deep Work',
     inspiration: inspirations['4/2'].description,
     todayTasks: [
@@ -100,7 +100,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
   '4/3': {
     date: '4/3',
-    day: '木',
+    day: '金',
     focus: 'Recovery',
     inspiration: inspirations['4/3'].description,
     todayTasks: [
@@ -114,7 +114,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
   '4/4': {
     date: '4/4',
-    day: '金',
+    day: '土',
     focus: 'Training Day 2',
     inspiration: inspirations['4/4'].description,
     todayTasks: [
@@ -129,7 +129,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
   '4/5': {
     date: '4/5',
-    day: '土',
+    day: '日',
     focus: 'Maintenance',
     inspiration: inspirations['4/5'].description,
     todayTasks: [
@@ -144,7 +144,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
   },
   '4/6': {
     date: '4/6',
-    day: '日',
+    day: '月',
     focus: 'Review',
     inspiration: inspirations['4/6'].description,
     todayTasks: [
@@ -218,8 +218,8 @@ export default function Home() {
       const savedToday = loadTasks(`${date}_today`);
       const savedDaily = loadTasks(`${date}_daily`);
       loaded[date] = {
-        today: savedToday || WEEK_DATA[date].todayTasks,
-        daily: savedDaily || makeDailyTasks(date),
+        today: savedToday && savedToday.length > 0 ? savedToday : WEEK_DATA[date].todayTasks,
+        daily: savedDaily && savedDaily.length > 0 ? savedDaily : makeDailyTasks(date),
       };
       const wakeup = loadTimeRecord(date, 'wakeup');
       const sleep = loadTimeRecord(date, 'sleep');
