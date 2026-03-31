@@ -60,6 +60,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 1, text: '申告書の再提出', completed: false, category: 'morning' },
       { id: 2, text: '個人事業税の支払い', completed: false, category: 'morning' },
       { id: 3, text: 'YORKYSブランチのメニュー部分構築', completed: false, category: 'work' },
+      { id: 6, text: 'YORKYS FROMAのカード修正', completed: false, category: 'work' },
       { id: 4, text: '筋トレ', completed: false, category: 'evening' },
       { id: 5, text: '日焼け', completed: false, category: 'evening' },
     ],

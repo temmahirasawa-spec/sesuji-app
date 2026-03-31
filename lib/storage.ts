@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'sesuji_week_tasks';
 const TIME_STORAGE_KEY = 'sesuji_week_times';
 const VERSION_KEY = 'sesuji_version';
-const CURRENT_VERSION = '2';
+const CURRENT_VERSION = '3';
 
 // バージョンが変わったらdailyデータをクリア
 export const checkVersion = () => {
@@ -14,7 +14,7 @@ export const checkVersion = () => {
       if (data) {
         const all = JSON.parse(data);
         Object.keys(all).forEach(key => {
-          if (key.endsWith('_daily')) delete all[key];
+          if (key.endsWith('_daily') || key.endsWith('_today')) delete all[key];
         });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
       }
