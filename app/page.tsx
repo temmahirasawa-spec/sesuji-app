@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Task, DayPlan } from '@/lib/types';
 import { saveTasks, loadTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import styles from './page.module.css';
+
+const SortableTaskList = dynamic(() => import('./SortableTaskList'), { ssr: false });
 
 // ============================
 // GOALS（大目標）
@@ -163,66 +163,6 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
     milestoneDescription: inspirations['4/6'].story,
   },
 };
-
-// ============================
-// Sortable Task Item Component
-// ============================
-function SortableTaskItem({ task, date, type, isEditing, editText, setEditText, submitEdit, setEditingTask, startEdit, deleteTask, toggleTask, styles: s }: {
-  task: Task; date: string; type: 'today' | 'daily';
-  isEditing: boolean; editText: string; setEditText: (v: string) => void;
-  submitEdit: () => void; setEditingTask: (v: any) => void;
-  startEdit: (date: string, id: number, type: 'today' | 'daily', text: string) => void;
-  deleteTask: (date: string, id: number, type: 'today' | 'daily') => void;
-  toggleTask: (date: string, id: number, type: 'today' | 'daily', e?: any) => void;
-  styles: any;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `${type}_${task.id}` });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  if (isEditing) {
-    return (
-      <div ref={setNodeRef} style={style} className={s.taskEditRow}>
-        <input
-          type="text"
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') submitEdit(); if (e.key === 'Escape') setEditingTask(null); }}
-          className={s.taskEditInput}
-          autoFocus
-        />
-        <button onClick={submitEdit} className={s.taskEditSave}>OK</button>
-        <button onClick={() => setEditingTask(null)} className={s.taskEditCancel}>&#10005;</button>
-      </div>
-    );
-  }
-
-  return (
-    <div ref={setNodeRef} style={style} className={`${s.taskItem} ${task.completed ? s.taskCompleted : ''} ${type === 'daily' ? s.taskItemDaily : ''}`}>
-      <div className={s.taskDragHandle} {...attributes} {...listeners}>
-        <span>&#8942;&#8942;</span>
-      </div>
-      <label className={s.taskLabel}>
-        <input
-          type="checkbox"
-          checked={task.completed}
-          onChange={(e) => toggleTask(date, task.id, type, e)}
-          className={s.taskCheckbox}
-        />
-        <span className={s.taskText}>{task.text}</span>
-        {task.completed && <span className={s.taskCheck}>&#10003;</span>}
-      </label>
-      <div className={s.taskActions}>
-        <button onClick={() => startEdit(date, task.id, type, task.text)} className={s.taskActionBtn} title="編集">&#9998;</button>
-        <button onClick={() => deleteTask(date, task.id, type)} className={`${s.taskActionBtn} ${s.taskActionDelete}`} title="削除">&#10005;</button>
-      </div>
-    </div>
-  );
-}
 
 const CATEGORY_LABELS: { [key: string]: { label: string; icon: string } } = {
   morning: { label: 'MORNING', icon: '☀' },
@@ -441,19 +381,7 @@ export default function Home() {
     setAddText('');
   };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-  );
-
-  const handleDragEnd = (date: string, type: 'today' | 'daily') => (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const tasks = type === 'today' ? weekTasks[date].today : weekTasks[date].daily;
-    const oldIndex = tasks.findIndex(t => `${type}_${t.id}` === active.id);
-    const newIndex = tasks.findIndex(t => `${type}_${t.id}` === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(tasks, oldIndex, newIndex);
+  const handleReorder = (date: string, type: 'today' | 'daily', reordered: Task[]) => {
     const newTasks = { ...weekTasks };
     if (type === 'today') {
       newTasks[date] = { ...newTasks[date], today: reordered };
@@ -465,32 +393,13 @@ export default function Home() {
   };
 
   const renderTaskList = (tasks: Task[], date: string, type: 'today' | 'daily') => (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(date, type)}>
-      <SortableContext items={tasks.map(t => `${type}_${t.id}`)} strategy={verticalListSortingStrategy}>
-        <div className={styles.tasksList}>
-          {tasks.map(task => {
-            const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
-            return (
-              <SortableTaskItem
-                key={`${type}_${task.id}`}
-                task={task}
-                date={date}
-                type={type}
-                isEditing={isEditing}
-                editText={editText}
-                setEditText={setEditText}
-                submitEdit={submitEdit}
-                setEditingTask={setEditingTask}
-                startEdit={startEdit}
-                deleteTask={deleteTask}
-                toggleTask={toggleTask}
-                styles={styles}
-              />
-            );
-          })}
-        </div>
-      </SortableContext>
-    </DndContext>
+    <SortableTaskList
+      tasks={tasks} date={date} type={type}
+      editingTask={editingTask} editText={editText} setEditText={setEditText}
+      submitEdit={submitEdit} cancelEdit={() => setEditingTask(null)}
+      startEdit={startEdit} deleteTask={deleteTask} toggleTask={toggleTask}
+      onReorder={handleReorder} styles={styles}
+    />
   );
 
   const renderAddForm = (date: string, type: 'today' | 'daily') => {
