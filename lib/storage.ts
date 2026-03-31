@@ -1,27 +1,7 @@
+import { Task } from './types';
+
 const STORAGE_KEY = 'sesuji_week_tasks';
 const TIME_STORAGE_KEY = 'sesuji_week_times';
-const VERSION_KEY = 'sesuji_version';
-const CURRENT_VERSION = '4';
-
-// バージョンが変わったらdailyデータをクリア
-export const checkVersion = () => {
-  if (typeof window === 'undefined') return;
-  try {
-    const v = localStorage.getItem(VERSION_KEY);
-    if (v !== CURRENT_VERSION) {
-      // dailyタスクだけクリア（todayのチェック状態は保持）
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (data) {
-        const all = JSON.parse(data);
-        Object.keys(all).forEach(key => {
-          if (key.endsWith('_daily') || key.endsWith('_today')) delete all[key];
-        });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-      }
-      localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-    }
-  } catch {}
-};
 
 export const loadTasks = (key: string) => {
   if (typeof window === 'undefined') return null;
@@ -35,7 +15,7 @@ export const loadTasks = (key: string) => {
   }
 };
 
-export const saveTasks = (key: string, tasks: any[]) => {
+export const saveTasks = (key: string, tasks: Task[]) => {
   if (typeof window === 'undefined') return;
   try {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -43,6 +23,24 @@ export const saveTasks = (key: string, tasks: any[]) => {
     all[key] = tasks;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   } catch {}
+};
+
+/**
+ * 最新のタスク定義と保存済みのチェック状態をマージする。
+ * - 新しいタスクが追加されていたら未完了で追加
+ * - 削除されたタスクは除外
+ * - 既存タスクのcompleted状態は保持
+ */
+export const mergeTasks = (defaults: Task[], saved: Task[] | null): Task[] => {
+  if (!saved || saved.length === 0) return defaults.map(t => ({ ...t }));
+
+  const savedMap = new Map<number, boolean>();
+  saved.forEach(t => savedMap.set(t.id, t.completed));
+
+  return defaults.map(t => ({
+    ...t,
+    completed: savedMap.has(t.id) ? savedMap.get(t.id)! : false,
+  }));
 };
 
 export const loadTimeRecord = (date: string, type: 'wakeup' | 'sleep') => {

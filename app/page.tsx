@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Task, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, saveTimeRecord, loadTimeRecord, checkVersion } from '@/lib/storage';
+import { saveTasks, loadTasks, mergeTasks, saveTimeRecord, loadTimeRecord } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import styles from './page.module.css';
 
@@ -213,15 +213,14 @@ export default function Home() {
   const [timeRecords, setTimeRecords] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    checkVersion();
     const loaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
     const times: { [key: string]: string } = {};
     Object.keys(WEEK_DATA).forEach(date => {
       const savedToday = loadTasks(`${date}_today`);
       const savedDaily = loadTasks(`${date}_daily`);
       loaded[date] = {
-        today: savedToday && savedToday.length > 0 ? savedToday : WEEK_DATA[date].todayTasks,
-        daily: savedDaily && savedDaily.length > 0 ? savedDaily : makeDailyTasks(date),
+        today: mergeTasks(WEEK_DATA[date].todayTasks, savedToday),
+        daily: mergeTasks(makeDailyTasks(date), savedDaily),
       };
       const wakeup = loadTimeRecord(date, 'wakeup');
       const sleep = loadTimeRecord(date, 'sleep');
