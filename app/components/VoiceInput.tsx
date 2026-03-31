@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ParsedTask } from '@/types/taskParsing';
-import ParseResultPopup from './ParseResultPopup';
+import TaskConfirmationFlow from './TaskConfirmationFlow';
 import styles from './VoiceInput.module.css';
 
 interface VoiceInputProps {
@@ -43,13 +43,13 @@ export default function VoiceInput({ date, onTasksConfirmed }: VoiceInputProps) 
     }
   };
 
-  const handleConfirm = (tasks: ParsedTask[]) => {
+  const handleComplete = (tasks: ParsedTask[]) => {
     onTasksConfirmed(tasks);
     setParsedTasks(null);
     setInput('');
   };
 
-  const handleClose = () => {
+  const handleCancel = () => {
     setParsedTasks(null);
   };
 
@@ -87,10 +87,10 @@ export default function VoiceInput({ date, onTasksConfirmed }: VoiceInputProps) 
       </div>
 
       {parsedTasks && (
-        <ParseResultPopup
+        <TaskConfirmationFlow
           tasks={parsedTasks}
-          onConfirm={handleConfirm}
-          onClose={handleClose}
+          onComplete={handleComplete}
+          onCancel={handleCancel}
         />
       )}
     </>
