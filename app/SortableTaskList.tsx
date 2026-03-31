@@ -5,14 +5,22 @@ import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSe
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const CATEGORY_OPTIONS = [
+  { value: 'morning', label: '☀ MORNING' },
+  { value: 'work', label: '💻 WORK' },
+  { value: 'evening', label: '🏋 EVENING' },
+  { value: 'night', label: '🌙 NIGHT' },
+];
+
 function getStatus(task: Task): TaskStatus {
   if (task.status) return task.status;
   return task.completed ? 'done' : 'pending';
 }
 
-function SortableTaskItem({ task, type, isEditing, editText, setEditText, submitEdit, cancelEdit, startEdit, onDelete, onSetStatus, styles: s }: {
+function SortableTaskItem({ task, type, isEditing, editText, setEditText, editCategory, setEditCategory, submitEdit, cancelEdit, startEdit, onDelete, onSetStatus, styles: s }: {
   task: Task; type: 'today' | 'daily';
   isEditing: boolean; editText: string; setEditText: (v: string) => void;
+  editCategory: string; setEditCategory: (v: any) => void;
   submitEdit: () => void; cancelEdit: () => void;
   startEdit: () => void; onDelete: () => void; onSetStatus: (status: TaskStatus) => void;
   styles: any;
@@ -32,6 +40,11 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, submit
         <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)}
           onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); submitEdit(); } if (e.key === 'Escape') cancelEdit(); }}
           className={s.taskEditInput} autoFocus />
+        <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className={s.addCategorySelect}>
+          {CATEGORY_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
         <button onClick={submitEdit} className={s.taskEditSave}>OK</button>
         <button onClick={cancelEdit} className={s.taskEditCancel}>&#10005;</button>
       </div>
@@ -74,16 +87,18 @@ interface SortableTaskListProps {
   editingTask: { date: string; id: number; type: 'today' | 'daily' } | null;
   editText: string;
   setEditText: (v: string) => void;
+  editCategory: string;
+  setEditCategory: (v: any) => void;
   submitEdit: () => void;
   cancelEdit: () => void;
-  startEdit: (date: string, id: number, type: 'today' | 'daily', text: string) => void;
+  startEdit: (date: string, id: number, type: 'today' | 'daily', text: string, category?: string) => void;
   deleteTask: (date: string, id: number, type: 'today' | 'daily') => void;
   setTaskStatus: (date: string, id: number, type: 'today' | 'daily', status: TaskStatus) => void;
   onReorder: (date: string, type: 'today' | 'daily', reordered: Task[]) => void;
   styles: any;
 }
 
-export default function SortableTaskList({ tasks, date, type, editingTask, editText, setEditText, submitEdit, cancelEdit, startEdit, deleteTask, setTaskStatus, onReorder, styles: s }: SortableTaskListProps) {
+export default function SortableTaskList({ tasks, date, type, editingTask, editText, setEditText, editCategory, setEditCategory, submitEdit, cancelEdit, startEdit, deleteTask, setTaskStatus, onReorder, styles: s }: SortableTaskListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
@@ -111,8 +126,9 @@ export default function SortableTaskList({ tasks, date, type, editingTask, editT
                 task={task} type={type}
                 isEditing={isEditing}
                 editText={editText} setEditText={setEditText}
+                editCategory={editCategory} setEditCategory={setEditCategory}
                 submitEdit={submitEdit} cancelEdit={cancelEdit}
-                startEdit={() => startEdit(date, task.id, type, task.text)}
+                startEdit={() => startEdit(date, task.id, type, task.text, task.category)}
                 onDelete={() => deleteTask(date, task.id, type)}
                 onSetStatus={(status) => setTaskStatus(date, task.id, type, status)}
                 styles={s}

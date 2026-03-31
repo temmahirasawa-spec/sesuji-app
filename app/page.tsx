@@ -215,6 +215,7 @@ export default function Home() {
   const [timeRecords, setTimeRecords] = useState<{ [key: string]: string }>({});
   const [editingTask, setEditingTask] = useState<{ date: string; id: number; type: 'today' | 'daily' } | null>(null);
   const [editText, setEditText] = useState('');
+  const [editCategory, setEditCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
   const [addingTo, setAddingTo] = useState<{ date: string; type: 'today' | 'daily' } | null>(null);
   const [addText, setAddText] = useState('');
   const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
@@ -375,12 +376,13 @@ export default function Home() {
     updateProgress(newTasks);
   };
 
-  const editTask = (date: string, taskId: number, type: 'today' | 'daily', newText: string) => {
+  const editTask = (date: string, taskId: number, type: 'today' | 'daily', newText: string, newCategory?: 'morning' | 'work' | 'evening' | 'night') => {
     const newTasks = { ...weekTasks };
     const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
     const task = taskList.find(t => t.id === taskId);
     if (task) {
       task.text = newText;
+      if (newCategory) task.category = newCategory;
       setWeekTasks({ ...newTasks });
       saveTasks(`${date}_${type}`, taskList);
     }
@@ -430,14 +432,15 @@ export default function Home() {
 
   const dates = Object.keys(WEEK_DATA);
 
-  const startEdit = (date: string, id: number, type: 'today' | 'daily', text: string) => {
+  const startEdit = (date: string, id: number, type: 'today' | 'daily', text: string, category?: string) => {
     setEditingTask({ date, id, type });
     setEditText(text);
+    setEditCategory((category as any) || 'morning');
   };
 
   const submitEdit = () => {
     if (editingTask && editText.trim()) {
-      editTask(editingTask.date, editingTask.id, editingTask.type, editText.trim());
+      editTask(editingTask.date, editingTask.id, editingTask.type, editText.trim(), editCategory);
     }
     setEditingTask(null);
     setEditText('');
@@ -479,6 +482,7 @@ export default function Home() {
     <SortableTaskList
       tasks={tasks} date={date} type={type}
       editingTask={editingTask} editText={editText} setEditText={setEditText}
+      editCategory={editCategory} setEditCategory={setEditCategory}
       submitEdit={submitEdit} cancelEdit={() => setEditingTask(null)}
       startEdit={startEdit} deleteTask={deleteTask} setTaskStatus={setTaskStatus}
       onReorder={handleReorder} styles={styles}
