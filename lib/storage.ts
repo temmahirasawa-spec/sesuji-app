@@ -65,6 +65,24 @@ export const loadTimeRecordCloud = async (date: string, type: 'wakeup' | 'sleep'
 };
 
 // ============================
+// Daily Ratings
+// ============================
+
+const RATINGS_STORAGE_KEY = 'sesuji_week_ratings';
+
+export const loadRatings = (date: string): { [key: string]: number } | null =>
+  localLoad(RATINGS_STORAGE_KEY, date);
+
+export const saveRatings = (date: string, ratings: { [key: string]: number }) => {
+  localSave(RATINGS_STORAGE_KEY, date, ratings);
+  cloudSave(`ratings_${date}`, ratings);
+};
+
+export const loadRatingsCloud = async (date: string): Promise<{ [key: string]: number } | null> => {
+  return await cloudLoad(`ratings_${date}`);
+};
+
+// ============================
 // Merge
 // ============================
 

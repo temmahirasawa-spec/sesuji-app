@@ -823,7 +823,80 @@
   border-color: var(--color-primary);
 }
 
-/* (Week grid view removed) */
+/* Daily Rating */
+.ratingSection {
+  margin-bottom: 2rem;
+}
+
+.ratingBadge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-surface);
+  background: #f59e0b;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+}
+
+.ratingGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+}
+
+.ratingLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.ratingStars {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.ratingStar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.ratingStar:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.ratingStarActive {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: white;
+}
+
+.ratingStarOverall.ratingStarActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
 
 /* Week List View */
 .weekListSection {
@@ -1087,6 +1160,16 @@
     height: 36px;
     font-size: 0.95rem;
     border-radius: 8px;
+  }
+
+  .ratingStar {
+    width: 38px;
+    height: 38px;
+    font-size: 0.9rem;
+  }
+
+  .ratingLabel {
+    font-size: 0.75rem;
   }
 
   .taskText {

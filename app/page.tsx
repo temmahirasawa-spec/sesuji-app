@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Task, TaskStatus, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
+import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud, loadRatings, saveRatings, loadRatingsCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import styles from './page.module.css';
 
@@ -174,6 +174,16 @@ const CATEGORY_ORDER = ['morning', 'work', 'evening', 'night'];
 
 type ViewMode = 'day' | 'list';
 
+const RATING_CATEGORIES = [
+  { key: 'sleep', label: '睡眠' },
+  { key: 'work', label: '仕事' },
+  { key: 'sex', label: '性' },
+  { key: 'food', label: '食事' },
+  { key: 'skincare', label: 'スキン・ボディケア' },
+  { key: 'exercise', label: '運動' },
+  { key: 'overall', label: '総合' },
+];
+
 interface Celebration {
   id: string;
   x: number;
@@ -208,6 +218,7 @@ export default function Home() {
   const [addingTo, setAddingTo] = useState<{ date: string; type: 'today' | 'daily' } | null>(null);
   const [addText, setAddText] = useState('');
   const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
+  const [dayRatings, setDayRatings] = useState<{ [date: string]: { [key: string]: number } }>({});
 
   useEffect(() => {
     // 1. まずlocalStorageから即座に表示
@@ -217,17 +228,34 @@ export default function Home() {
 
     // 3/31のdailyルーティンをテンプレートとして取得
     const baseDaily = loadTasks('3/31_daily');
+    const ratings: { [date: string]: { [key: string]: number } } = {};
+
+    // 3/31のルーティン構成（タスクのリスト）を他の日にも反映
+    // 各日の完了状態は個別に保持する
+    const syncVersion = localStorage.getItem('sesuji_daily_sync_v') || '0';
+    const currentSyncVersion = '2'; // バージョンを上げると全日に再同期
 
     dates.forEach(date => {
       const savedToday = loadTasks(`${date}_today`);
       const savedDaily = loadTasks(`${date}_daily`);
 
-      // dailyが未保存の日は3/31のルーティン構成をテンプレートとして使用（completedはリセット）
       let daily: Task[];
-      if (savedDaily) {
+      if (date === '3/31') {
+        // 3/31はそのまま
+        daily = savedDaily ? mergeTasks(makeDailyTasks(date), savedDaily) : mergeTasks(makeDailyTasks(date), null);
+      } else if (baseDaily && syncVersion !== currentSyncVersion) {
+        // 3/31のルーティン構成を反映（完了状態は各日のものを保持）
+        const existingMap = new Map<number, Task>();
+        if (savedDaily) savedDaily.forEach((t: Task) => existingMap.set(t.id, t));
+        daily = baseDaily.map((t: Task) => {
+          const existing = existingMap.get(t.id);
+          return { ...t, completed: existing?.completed ?? false, status: existing?.status ?? undefined };
+        });
+        saveTasks(`${date}_daily`, daily);
+      } else if (savedDaily) {
         daily = mergeTasks(makeDailyTasks(date), savedDaily);
       } else if (baseDaily) {
-        daily = baseDaily.map((t: Task) => ({ ...t, completed: false }));
+        daily = baseDaily.map((t: Task) => ({ ...t, completed: false, status: undefined }));
         saveTasks(`${date}_daily`, daily);
       } else {
         daily = mergeTasks(makeDailyTasks(date), null);
@@ -241,9 +269,18 @@ export default function Home() {
       const sleep = loadTimeRecord(date, 'sleep');
       if (wakeup) times[`${date}_wakeup`] = wakeup;
       if (sleep) times[`${date}_sleep`] = sleep;
+
+      // 評価データ読み込み
+      const r = loadRatings(date);
+      if (r) ratings[date] = r;
     });
+
+    if (syncVersion !== currentSyncVersion) {
+      localStorage.setItem('sesuji_daily_sync_v', currentSyncVersion);
+    }
     setWeekTasks(loaded);
     setTimeRecords(times);
+    setDayRatings(ratings);
     setIsLoaded(true);
     updateProgress(loaded);
 
@@ -251,6 +288,7 @@ export default function Home() {
     (async () => {
       const cloudLoaded: { [key: string]: { today: Task[]; daily: Task[] } } = {};
       const cloudTimes: { [key: string]: string } = {};
+      const cloudRatings: { [date: string]: { [key: string]: number } } = {};
       let hasCloudData = false;
 
       for (const date of dates) {
@@ -280,11 +318,20 @@ export default function Home() {
         else if (times[`${date}_wakeup`]) cloudTimes[`${date}_wakeup`] = times[`${date}_wakeup`];
         if (cloudSleep) { cloudTimes[`${date}_sleep`] = cloudSleep; hasCloudData = true; }
         else if (times[`${date}_sleep`]) cloudTimes[`${date}_sleep`] = times[`${date}_sleep`];
+
+        const cloudRating = await loadRatingsCloud(date);
+        if (cloudRating) {
+          cloudRatings[date] = cloudRating;
+          hasCloudData = true;
+        } else if (ratings[date]) {
+          cloudRatings[date] = ratings[date];
+        }
       }
 
       if (hasCloudData) {
         setWeekTasks(cloudLoaded);
         setTimeRecords(cloudTimes);
+        if (Object.keys(cloudRatings).length > 0) setDayRatings(cloudRatings);
         updateProgress(cloudLoaded);
       }
     })();
@@ -419,6 +466,13 @@ export default function Home() {
     }
     setWeekTasks({ ...newTasks });
     saveTasks(`${date}_${type}`, reordered);
+  };
+
+  const handleRating = (date: string, category: string, value: number) => {
+    const current = dayRatings[date] || {};
+    const updated = { ...current, [category]: current[category] === value ? 0 : value };
+    setDayRatings(prev => ({ ...prev, [date]: updated }));
+    saveRatings(date, updated);
   };
 
   const renderTaskList = (tasks: Task[], date: string, type: 'today' | 'daily') => (
@@ -573,6 +627,35 @@ export default function Home() {
               </h4>
               {renderTaskList(tasks.daily, date, 'daily')}
               {renderAddForm(date, 'daily')}
+            </div>
+
+            {/* Daily Rating */}
+            <div className={styles.ratingSection}>
+              <h4 className={styles.taskSectionTitle}>
+                <span className={styles.ratingBadge}>REVIEW</span>
+                <span className={styles.taskSectionSub}>今日の評価</span>
+              </h4>
+              <div className={styles.ratingGrid}>
+                {RATING_CATEGORIES.map(cat => {
+                  const currentValue = dayRatings[date]?.[cat.key] || 0;
+                  return (
+                    <div key={cat.key} className={styles.ratingRow}>
+                      <span className={styles.ratingLabel}>{cat.label}</span>
+                      <div className={styles.ratingStars}>
+                        {[1, 2, 3, 4, 5].map(v => (
+                          <button
+                            key={v}
+                            onClick={() => handleRating(date, cat.key, v)}
+                            className={`${styles.ratingStar} ${v <= currentValue ? styles.ratingStarActive : ''} ${cat.key === 'overall' ? styles.ratingStarOverall : ''}`}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
