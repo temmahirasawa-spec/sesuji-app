@@ -64,7 +64,6 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 2, text: '消費税の支払い', completed: false, category: 'morning' },
       { id: 3, text: 'YORKYSブランチのメニュー部分構築', completed: false, category: 'work' },
       { id: 6, text: 'YORKYS FROMAのカード修正', completed: false, category: 'work' },
-      { id: 4, text: '筋トレ', completed: false, category: 'evening' },
       { id: 5, text: '日焼け', completed: false, category: 'evening' },
     ],
     dailyTasks: [],
@@ -173,7 +172,7 @@ const CATEGORY_LABELS: { [key: string]: { label: string; icon: string } } = {
 
 const CATEGORY_ORDER = ['morning', 'work', 'evening', 'night'];
 
-type ViewMode = 'day' | 'week';
+type ViewMode = 'day' | 'week' | 'weeklist';
 
 interface Celebration {
   id: string;
@@ -560,30 +559,22 @@ export default function Home() {
       <header className={styles.header}>
         <div className={styles.container}>
           <div className={styles.headerTop}>
-            <div>
+            <div className={styles.headerTitleRow}>
               <h1 className={styles.title}>Sesuji Week</h1>
-              <p className={styles.subtitle}>7-day life refactoring system</p>
+              <div className={styles.progressInline}>
+                <div className={styles.progressBarInline}>
+                  <div className={styles.progressBarInlineFill} style={{ width: `${totalProgress}%` }}></div>
+                </div>
+                <span className={styles.progressValueInline}>{totalProgress}%</span>
+              </div>
             </div>
             <div className={styles.viewToggle}>
               <button className={`${styles.viewBtn} ${viewMode === 'day' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('day')}>Day</button>
+              <button className={`${styles.viewBtn} ${viewMode === 'weeklist' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('weeklist')}>List</button>
               <button className={`${styles.viewBtn} ${viewMode === 'week' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('week')}>Week</button>
             </div>
           </div>
-          <div className={styles.progressSection}>
-            <div className={styles.progressHeader}>
-              <span className={styles.progressLabel}>WEEKLY PROGRESS</span>
-              <span className={styles.progressValue}>{totalProgress}%</span>
-            </div>
-            <div className={styles.progressBarContainer}>
-              <div className={styles.progressBar} style={{ width: `${totalProgress}%` }}></div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {viewMode === 'day' && (
-        <section className={styles.dayViewSection}>
-          <div className={styles.container}>
+          {viewMode === 'day' && (
             <div className={styles.daySelector}>
               {dates.map(date => {
                 const prog = getDayProgress(date);
@@ -598,7 +589,72 @@ export default function Home() {
                 );
               })}
             </div>
+          )}
+        </div>
+      </header>
+
+      {viewMode === 'day' && (
+        <section className={styles.dayViewSection}>
+          <div className={styles.container}>
             {renderDayCard(selectedDate)}
+          </div>
+        </section>
+      )}
+
+      {viewMode === 'weeklist' && (
+        <section className={styles.weekListSection}>
+          <div className={styles.container}>
+            {dates.map(date => {
+              const dayData = WEEK_DATA[date];
+              const tasks = weekTasks[date];
+              if (!tasks) return null;
+              const allTasks = [...tasks.today, ...tasks.daily];
+              const completedCount = allTasks.filter(t => t.completed).length;
+              const dayProgress = getDayProgress(date);
+
+              const groupedToday: { [cat: string]: Task[] } = {};
+              tasks.today.forEach(t => {
+                const cat = t.category || 'morning';
+                if (!groupedToday[cat]) groupedToday[cat] = [];
+                groupedToday[cat].push(t);
+              });
+
+              return (
+                <div key={date} className={styles.weekListDay}>
+                  <div className={styles.weekListDayHeader} onClick={() => { setSelectedDate(date); setViewMode('day'); }}>
+                    <div className={styles.weekListDayInfo}>
+                      <span className={styles.weekListDate}>{date}</span>
+                      <span className={styles.weekListDayOfWeek}>({dayData.day})</span>
+                      <span className={styles.weekListFocus}>{dayData.focus}</span>
+                    </div>
+                    <div className={styles.weekListStats}>
+                      <span className={styles.weekListCount}>{completedCount}/{allTasks.length}</span>
+                    </div>
+                  </div>
+                  <div className={styles.weekListProgress}>
+                    <div className={styles.weekListProgressFill} style={{ width: `${dayProgress}%` }}></div>
+                  </div>
+                  <div className={styles.weekListTasks}>
+                    {CATEGORY_ORDER.map(cat => {
+                      const catTasks = (groupedToday[cat] || []);
+                      if (catTasks.length === 0) return null;
+                      return (
+                        <div key={cat} className={styles.weekListCategory}>
+                          <span className={styles.weekListCategoryIcon}>{CATEGORY_LABELS[cat].icon}</span>
+                          <div className={styles.weekListCategoryTasks}>
+                            {catTasks.map(t => (
+                              <span key={t.id} className={`${styles.weekListTask} ${t.completed ? styles.weekListTaskDone : ''}`}>
+                                {t.text}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

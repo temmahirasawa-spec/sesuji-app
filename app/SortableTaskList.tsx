@@ -24,7 +24,7 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, submit
     return (
       <div ref={setNodeRef} style={style} className={s.taskEditRow}>
         <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') submitEdit(); if (e.key === 'Escape') cancelEdit(); }}
+          onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); submitEdit(); } if (e.key === 'Escape') cancelEdit(); }}
           className={s.taskEditInput} autoFocus />
         <button onClick={submitEdit} className={s.taskEditSave}>OK</button>
         <button onClick={cancelEdit} className={s.taskEditCancel}>&#10005;</button>
@@ -37,13 +37,12 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, submit
       <div className={s.taskDragHandle} {...attributes} {...listeners}>
         <span>&#8942;&#8942;</span>
       </div>
-      <label className={s.taskLabel}>
+      <div className={s.taskLabel}>
         <input type="checkbox" checked={task.completed} onChange={onToggle} className={s.taskCheckbox} />
-        <span className={s.taskText}>{task.text}</span>
+        <span className={s.taskText} onClick={startEdit}>{task.text}</span>
         {task.completed && <span className={s.taskCheck}>&#10003;</span>}
-      </label>
+      </div>
       <div className={s.taskActions}>
-        <button onClick={startEdit} className={s.taskActionBtn} title="編集">&#9998;</button>
         <button onClick={onDelete} className={`${s.taskActionBtn} ${s.taskActionDelete}`} title="削除">&#10005;</button>
       </div>
     </div>
