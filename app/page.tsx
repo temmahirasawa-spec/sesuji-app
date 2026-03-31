@@ -416,7 +416,7 @@ export default function Home() {
           type="text"
           value={addText}
           onChange={(e) => setAddText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') submitAdd(); if (e.key === 'Escape') setAddingTo(null); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitAdd(); if (e.key === 'Escape') setAddingTo(null); }}
           placeholder="タスク名を入力..."
           className={styles.taskEditInput}
           autoFocus
