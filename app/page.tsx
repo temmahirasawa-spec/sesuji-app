@@ -25,7 +25,7 @@ const makeDailyTasks = (date: string): Task[] => {
   const tasks: Task[] = [
     // Morning
     { id: 201, text: 'サプリメント摂取（朝）', completed: false, category: 'morning' },
-    { id: 202, text: '日焼け止めを塗る', completed: false, category: 'morning' },
+    { id: 202, text: '日焼けをする', completed: false, category: 'morning' },
     // Work
     { id: 301, text: '仕事中プライベート禁止（SNS・動画など）', completed: false, category: 'work' },
     // Evening
