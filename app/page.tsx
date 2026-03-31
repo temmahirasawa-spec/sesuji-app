@@ -174,14 +174,14 @@ const CATEGORY_ORDER = ['morning', 'work', 'evening', 'night'];
 
 type ViewMode = 'day' | 'list';
 
-const RATING_CATEGORIES = [
-  { key: 'sleep', label: '睡眠' },
-  { key: 'work', label: '仕事' },
-  { key: 'sex', label: '性' },
-  { key: 'food', label: '食事' },
-  { key: 'skincare', label: 'スキン・ボディケア' },
-  { key: 'exercise', label: '運動' },
-  { key: 'overall', label: '総合' },
+const RATING_CATEGORIES: { key: string; label: string; type: 'score' | 'boolean' }[] = [
+  { key: 'sleep', label: '睡眠', type: 'score' },
+  { key: 'work', label: '仕事', type: 'score' },
+  { key: 'sex', label: '性', type: 'boolean' },
+  { key: 'food', label: '食事', type: 'score' },
+  { key: 'skincare', label: 'スキン・ボディケア', type: 'score' },
+  { key: 'exercise', label: '運動', type: 'boolean' },
+  { key: 'overall', label: '総合', type: 'score' },
 ];
 
 interface Celebration {
@@ -641,17 +641,30 @@ export default function Home() {
                   return (
                     <div key={cat.key} className={styles.ratingRow}>
                       <span className={styles.ratingLabel}>{cat.label}</span>
-                      <div className={styles.ratingStars}>
-                        {[1, 2, 3, 4, 5].map(v => (
+                      {cat.type === 'boolean' ? (
+                        <div className={styles.ratingBoolBtns}>
                           <button
-                            key={v}
-                            onClick={() => handleRating(date, cat.key, v)}
-                            className={`${styles.ratingStar} ${v <= currentValue ? styles.ratingStarActive : ''} ${cat.key === 'overall' ? styles.ratingStarOverall : ''}`}
-                          >
-                            {v}
-                          </button>
-                        ))}
-                      </div>
+                            onClick={() => handleRating(date, cat.key, currentValue === 1 ? 0 : 1)}
+                            className={`${styles.ratingBoolBtn} ${styles.ratingBoolYes} ${currentValue === 1 ? styles.ratingBoolActive : ''}`}
+                          >&#9675;</button>
+                          <button
+                            onClick={() => handleRating(date, cat.key, currentValue === -1 ? 0 : -1)}
+                            className={`${styles.ratingBoolBtn} ${styles.ratingBoolNo} ${currentValue === -1 ? styles.ratingBoolActive : ''}`}
+                          >&#10005;</button>
+                        </div>
+                      ) : (
+                        <div className={styles.ratingStars}>
+                          {[1, 2, 3, 4, 5].map(v => (
+                            <button
+                              key={v}
+                              onClick={() => handleRating(date, cat.key, v)}
+                              className={`${styles.ratingStar} ${v <= currentValue ? styles.ratingStarActive : ''} ${cat.key === 'overall' ? styles.ratingStarOverall : ''}`}
+                            >
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
