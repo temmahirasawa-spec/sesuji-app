@@ -25,7 +25,7 @@ export async function cloudLoad(key: string): Promise<any | null> {
       .from('sesuji_data')
       .select('data')
       .eq('id', key)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return null;
     return data.data;
