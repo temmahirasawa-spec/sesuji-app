@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Task, DayPlan } from '@/lib/types';
+import { Task, TaskStatus, DayPlan } from '@/lib/types';
 import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import styles from './page.module.css';
@@ -290,30 +290,31 @@ export default function Home() {
     })();
   }, []);
 
+  const getTaskStatus = (task: Task): TaskStatus => task.status || (task.completed ? 'done' : 'pending');
+
   const updateProgress = useCallback((tasks: { [key: string]: { today: Task[]; daily: Task[] } }) => {
     let total = 0;
-    let completed = 0;
+    let resolved = 0;
     Object.keys(tasks).forEach(date => {
       [...tasks[date].today, ...tasks[date].daily].forEach(task => {
         total++;
-        if (task.completed) completed++;
+        const s = task.status || (task.completed ? 'done' : 'pending');
+        if (s === 'done' || s === 'failed') resolved++;
       });
     });
-    setTotalProgress(total === 0 ? 0 : Math.round((completed / total) * 100));
+    setTotalProgress(total === 0 ? 0 : Math.round((resolved / total) * 100));
   }, []);
 
-  const toggleTask = (date: string, taskId: number, type: 'today' | 'daily', e?: React.MouseEvent | React.ChangeEvent) => {
+  const setTaskStatus = (date: string, taskId: number, type: 'today' | 'daily', status: TaskStatus) => {
     const newTasks = { ...weekTasks };
     const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
     const task = taskList.find(t => t.id === taskId);
     if (task) {
-      task.completed = !task.completed;
+      task.status = status;
+      task.completed = status === 'done';
       setWeekTasks({ ...newTasks });
       saveTasks(`${date}_${type}`, taskList);
       updateProgress(newTasks);
-      if (task.completed && e && 'clientX' in e) {
-        createCelebration(e as React.MouseEvent);
-      }
     }
   };
 
@@ -367,7 +368,8 @@ export default function Home() {
     if (!t) return 0;
     const all = [...t.today, ...t.daily];
     if (all.length === 0) return 0;
-    return Math.round((all.filter(t => t.completed).length / all.length) * 100);
+    const resolved = all.filter(t => { const s = t.status || (t.completed ? 'done' : 'pending'); return s === 'done' || s === 'failed'; }).length;
+    return Math.round((resolved / all.length) * 100);
   };
 
   if (!isLoaded) {
@@ -424,7 +426,7 @@ export default function Home() {
       tasks={tasks} date={date} type={type}
       editingTask={editingTask} editText={editText} setEditText={setEditText}
       submitEdit={submitEdit} cancelEdit={() => setEditingTask(null)}
-      startEdit={startEdit} deleteTask={deleteTask} toggleTask={toggleTask}
+      startEdit={startEdit} deleteTask={deleteTask} setTaskStatus={setTaskStatus}
       onReorder={handleReorder} styles={styles}
     />
   );
@@ -499,7 +501,7 @@ export default function Home() {
     if (!tasks) return null;
     const dayProgress = getDayProgress(date);
     const allTasks = [...tasks.today, ...tasks.daily];
-    const completedCount = allTasks.filter(t => t.completed).length;
+    const resolvedCount = allTasks.filter(t => { const s = t.status || (t.completed ? 'done' : 'pending'); return s === 'done' || s === 'failed'; }).length;
 
     return (
       <div
@@ -517,7 +519,7 @@ export default function Home() {
             {!compact && <p className={styles.inspiration}>{dayData.inspiration}</p>}
           </div>
           <div className={styles.dayStats}>
-            <span className={styles.completedCount}>{completedCount}/{allTasks.length}</span>
+            <span className={styles.completedCount}>{resolvedCount}/{allTasks.length}</span>
           </div>
         </div>
 
@@ -643,7 +645,8 @@ export default function Home() {
                 const tasks = weekTasks[date];
                 if (!tasks) return null;
                 const allTasks = [...tasks.today, ...tasks.daily];
-                const completedCount = allTasks.filter(t => t.completed).length;
+                const doneCount = allTasks.filter(t => (t.status || (t.completed ? 'done' : 'pending')) === 'done').length;
+                const failedCount = allTasks.filter(t => t.status === 'failed').length;
                 const dayProgress = getDayProgress(date);
                 const isToday = date === todayDate;
 
@@ -664,7 +667,7 @@ export default function Home() {
                         <span className={styles.weekListFocus}>{dayData.focus}</span>
                       </div>
                       <div className={styles.weekListStats}>
-                        <span className={styles.weekListCount}>{completedCount}/{allTasks.length}</span>
+                        <span className={styles.weekListCount}>{doneCount}{failedCount > 0 && <span className={styles.weekListFailCount}>/{failedCount}&#10005;</span>}/{allTasks.length}</span>
                       </div>
                     </div>
                     <div className={styles.weekListProgress}>
@@ -689,11 +692,16 @@ export default function Home() {
                           <div key={cat} className={styles.weekListCategory}>
                             <span className={styles.weekListCategoryIcon}>{CATEGORY_LABELS[cat].icon}</span>
                             <div className={styles.weekListCategoryTasks}>
-                              {catTasks.map(t => (
-                                <span key={t.id} className={`${styles.weekListTask} ${t.completed ? styles.weekListTaskDone : ''}`}>
-                                  {t.text}
-                                </span>
-                              ))}
+                              {catTasks.map(t => {
+                                const ts = t.status || (t.completed ? 'done' : 'pending');
+                                return (
+                                  <span key={t.id} className={`${styles.weekListTask} ${ts === 'done' ? styles.weekListTaskDone : ''} ${ts === 'failed' ? styles.weekListTaskFailed : ''}`}>
+                                    {ts === 'done' && <span className={styles.weekListStatusIcon}>&#10003;</span>}
+                                    {ts === 'failed' && <span className={styles.weekListStatusIcon}>&#10005;</span>}
+                                    {t.text}
+                                  </span>
+                                );
+                              })}
                             </div>
                           </div>
                         );

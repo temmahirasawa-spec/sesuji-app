@@ -1,7 +1,10 @@
+export type TaskStatus = 'pending' | 'done' | 'failed';
+
 export interface Task {
   id: number;
   text: string;
-  completed: boolean;
+  completed: boolean; // legacy compat: true = done
+  status?: TaskStatus;
   category?: 'morning' | 'work' | 'evening' | 'night';
 }
 

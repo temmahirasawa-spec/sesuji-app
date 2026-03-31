@@ -1,18 +1,24 @@
 'use client';
 
-import { Task } from '@/lib/types';
+import { Task, TaskStatus } from '@/lib/types';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableTaskItem({ task, type, isEditing, editText, setEditText, submitEdit, cancelEdit, startEdit, onDelete, onToggle, styles: s }: {
+function getStatus(task: Task): TaskStatus {
+  if (task.status) return task.status;
+  return task.completed ? 'done' : 'pending';
+}
+
+function SortableTaskItem({ task, type, isEditing, editText, setEditText, submitEdit, cancelEdit, startEdit, onDelete, onSetStatus, styles: s }: {
   task: Task; type: 'today' | 'daily';
   isEditing: boolean; editText: string; setEditText: (v: string) => void;
   submitEdit: () => void; cancelEdit: () => void;
-  startEdit: () => void; onDelete: () => void; onToggle: (e: any) => void;
+  startEdit: () => void; onDelete: () => void; onSetStatus: (status: TaskStatus) => void;
   styles: any;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `${type}_${task.id}` });
+  const status = getStatus(task);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -32,15 +38,27 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, submit
     );
   }
 
+  const statusClass = status === 'done' ? s.taskDone : status === 'failed' ? s.taskFailed : '';
+
   return (
-    <div ref={setNodeRef} style={style} className={`${s.taskItem} ${task.completed ? s.taskCompleted : ''} ${type === 'daily' ? s.taskItemDaily : ''}`}>
+    <div ref={setNodeRef} style={style} className={`${s.taskItem} ${statusClass} ${type === 'daily' ? s.taskItemDaily : ''}`}>
       <div className={s.taskDragHandle} {...attributes} {...listeners}>
         <span>&#8942;&#8942;</span>
       </div>
       <div className={s.taskLabel}>
-        <input type="checkbox" checked={task.completed} onChange={onToggle} className={s.taskCheckbox} />
+        <div className={s.taskStatusBtns}>
+          <button
+            onClick={() => onSetStatus(status === 'done' ? 'pending' : 'done')}
+            className={`${s.taskStatusBtn} ${s.taskStatusDone} ${status === 'done' ? s.taskStatusActive : ''}`}
+            title="完了"
+          >&#10003;</button>
+          <button
+            onClick={() => onSetStatus(status === 'failed' ? 'pending' : 'failed')}
+            className={`${s.taskStatusBtn} ${s.taskStatusFail} ${status === 'failed' ? s.taskStatusActive : ''}`}
+            title="未達"
+          >&#10005;</button>
+        </div>
         <span className={s.taskText} onClick={startEdit}>{task.text}</span>
-        {task.completed && <span className={s.taskCheck}>&#10003;</span>}
       </div>
       <div className={s.taskActions}>
         <button onClick={onDelete} className={`${s.taskActionBtn} ${s.taskActionDelete}`} title="削除">&#10005;</button>
@@ -60,12 +78,12 @@ interface SortableTaskListProps {
   cancelEdit: () => void;
   startEdit: (date: string, id: number, type: 'today' | 'daily', text: string) => void;
   deleteTask: (date: string, id: number, type: 'today' | 'daily') => void;
-  toggleTask: (date: string, id: number, type: 'today' | 'daily', e?: any) => void;
+  setTaskStatus: (date: string, id: number, type: 'today' | 'daily', status: TaskStatus) => void;
   onReorder: (date: string, type: 'today' | 'daily', reordered: Task[]) => void;
   styles: any;
 }
 
-export default function SortableTaskList({ tasks, date, type, editingTask, editText, setEditText, submitEdit, cancelEdit, startEdit, deleteTask, toggleTask, onReorder, styles: s }: SortableTaskListProps) {
+export default function SortableTaskList({ tasks, date, type, editingTask, editText, setEditText, submitEdit, cancelEdit, startEdit, deleteTask, setTaskStatus, onReorder, styles: s }: SortableTaskListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
@@ -96,7 +114,7 @@ export default function SortableTaskList({ tasks, date, type, editingTask, editT
                 submitEdit={submitEdit} cancelEdit={cancelEdit}
                 startEdit={() => startEdit(date, task.id, type, task.text)}
                 onDelete={() => deleteTask(date, task.id, type)}
-                onToggle={(e) => toggleTask(date, task.id, type, e)}
+                onSetStatus={(status) => setTaskStatus(date, task.id, type, status)}
                 styles={s}
               />
             );
