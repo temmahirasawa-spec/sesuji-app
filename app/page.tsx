@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { Task, TaskStatus, DayPlan } from '@/lib/types';
 import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud, loadRatings, saveRatings, loadRatingsCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
+import { ParsedTask } from '@/types/taskParsing';
+import VoiceInput from './components/VoiceInput';
 import styles from './page.module.css';
 
 const SortableTaskList = dynamic(() => import('./SortableTaskList'), { ssr: false });
@@ -471,6 +473,24 @@ export default function Home() {
     saveTasks(`${date}_${type}`, reordered);
   };
 
+  const handleVoiceTasksConfirmed = (date: string, parsed: ParsedTask[]) => {
+    const newTasks = { ...weekTasks };
+    const todayList = [...newTasks[date].today];
+    const maxId = todayList.length > 0 ? Math.max(...todayList.map(t => t.id)) : 0;
+    parsed.forEach((p, i) => {
+      todayList.push({
+        id: maxId + 1 + i,
+        text: p.text,
+        completed: false,
+        category: p.category,
+      });
+    });
+    newTasks[date] = { ...newTasks[date], today: todayList };
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_today`, todayList);
+    updateProgress(newTasks);
+  };
+
   const handleRating = (date: string, category: string, value: number) => {
     const current = dayRatings[date] || {};
     const updated = { ...current, [category]: current[category] === value ? 0 : value };
@@ -612,6 +632,12 @@ export default function Home() {
               <span className={styles.milestoneTitle}>{dayData.milestoneTitle}</span>
               <p className={styles.milestoneDescription}>{dayData.milestoneDescription}</p>
             </div>
+
+            {/* Voice Input */}
+            <VoiceInput
+              date={date}
+              onTasksConfirmed={(parsed) => handleVoiceTasksConfirmed(date, parsed)}
+            />
 
             {/* TODAY tasks */}
             <div className={styles.taskSection}>
