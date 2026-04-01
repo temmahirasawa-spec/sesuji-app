@@ -15,6 +15,17 @@ const CATEGORY_OPTIONS = [
 
 const CATEGORY_ORDER = ['morning', 'work', 'evening', 'night'];
 
+function CategoryDropZone({ cat, catInfo, count, styles: s }: { cat: string; catInfo: { label: string } | undefined; count: number; styles: any }) {
+  const { setNodeRef, isOver } = useSortable({ id: `cat_${cat}` });
+  return (
+    <div ref={setNodeRef} className={`${s.taskGroupHeader} ${isOver ? s.taskGroupHeaderOver : ''}`}>
+      <span className={s.taskGroupIcon}>{catInfo?.label.split(' ')[0] || ''}</span>
+      <span className={s.taskGroupLabel}>{catInfo?.label.split(' ')[1] || cat.toUpperCase()}</span>
+      <span className={s.taskGroupCount}>{count}</span>
+    </div>
+  );
+}
+
 function getStatus(task: Task): TaskStatus {
   if (task.status) return task.status;
   return task.completed ? 'done' : 'pending';
@@ -182,11 +193,7 @@ export default function SortableTaskList({ tasks, date, type, editingTask, editT
             const catTasks = grouped[cat];
             return (
               <div key={cat}>
-                <div className={s.taskGroupHeader} id={`cat_${cat}`}>
-                  <span className={s.taskGroupIcon}>{catInfo?.label.split(' ')[0] || ''}</span>
-                  <span className={s.taskGroupLabel}>{catInfo?.label.split(' ')[1] || cat.toUpperCase()}</span>
-                  <span className={s.taskGroupCount}>{catTasks.length}</span>
-                </div>
+                <CategoryDropZone cat={cat} catInfo={catInfo} count={catTasks.length} styles={s} />
                 {catTasks.map(task => {
                   const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
                   return (

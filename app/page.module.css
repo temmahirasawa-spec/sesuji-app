@@ -552,6 +552,13 @@
   margin-top: 0;
 }
 
+.taskGroupHeaderOver {
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--color-primary-light);
+  padding: 0.5rem;
+}
+
 .taskGroupIcon {
   font-size: 0.8rem;
 }
