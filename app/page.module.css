@@ -671,6 +671,16 @@
   font-weight: 500;
 }
 
+.taskGroupCount {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-border);
+  padding: 0.05rem 0.35rem;
+  border-radius: 100px;
+  margin-left: auto;
+}
+
 .taskMemoPreview {
   display: block;
   font-size: 0.75rem;

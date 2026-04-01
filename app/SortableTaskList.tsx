@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Task, TaskStatus } from '@/lib/types';
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -12,6 +12,8 @@ const CATEGORY_OPTIONS = [
   { value: 'evening', label: '🏋 EVENING' },
   { value: 'night', label: '🌙 NIGHT' },
 ];
+
+const CATEGORY_ORDER = ['morning', 'work', 'evening', 'night'];
 
 function getStatus(task: Task): TaskStatus {
   if (task.status) return task.status;
@@ -28,7 +30,6 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, editCa
   onMemoChange: (memo: string) => void;
   styles: any;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `${type}_${task.id}` });
   const status = getStatus(task);
 
@@ -126,59 +127,86 @@ export default function SortableTaskList({ tasks, date, type, editingTask, editT
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
   );
 
+  // カテゴリごとにタスクをグループ化
+  const grouped: Record<string, Task[]> = {};
+  for (const cat of CATEGORY_ORDER) grouped[cat] = [];
+  for (const task of tasks) {
+    const cat = task.category || 'morning';
+    if (grouped[cat]) grouped[cat].push(task);
+    else grouped['morning'].push(task);
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = tasks.findIndex(t => `${type}_${t.id}` === active.id);
-    const newIndex = tasks.findIndex(t => `${type}_${t.id}` === over.id);
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // ドロップ先がカテゴリヘッダーの場合
+    if (overId.startsWith('cat_')) {
+      const targetCat = overId.replace('cat_', '');
+      const taskIdx = tasks.findIndex(t => `${type}_${t.id}` === activeId);
+      if (taskIdx === -1) return;
+
+      const updated = tasks.map((t, i) => i === taskIdx ? { ...t, category: targetCat as any } : t);
+      onReorder(date, type, updated);
+      return;
+    }
+
+    // タスク間のドラッグ
+    const oldIndex = tasks.findIndex(t => `${type}_${t.id}` === activeId);
+    const newIndex = tasks.findIndex(t => `${type}_${t.id}` === overId);
     if (oldIndex === -1 || newIndex === -1) return;
+
+    // 移動先タスクのカテゴリを取得して、ドラッグしたタスクのカテゴリを更新
+    const targetCat = tasks[newIndex].category || 'morning';
     const reordered = arrayMove(tasks, oldIndex, newIndex);
+    reordered[newIndex] = { ...reordered[newIndex], category: targetCat };
+
     onReorder(date, type, reordered);
   };
 
-  // Build flat render list with category headers injected
-  const renderItems: { type: 'header'; cat: string }[] | { type: 'task'; task: Task }[] = [];
-  let lastCat = '';
-  for (const task of tasks) {
-    const cat = task.category || 'morning';
-    if (cat !== lastCat) {
-      (renderItems as any[]).push({ type: 'header', cat });
-      lastCat = cat;
-    }
-    (renderItems as any[]).push({ type: 'task', task });
-  }
+  // 全ソート可能アイテムID（カテゴリヘッダー + タスク）
+  const allIds = CATEGORY_ORDER.flatMap(cat => [
+    `cat_${cat}`,
+    ...grouped[cat].map(t => `${type}_${t.id}`),
+  ]);
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={tasks.map(t => `${type}_${t.id}`)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={allIds} strategy={verticalListSortingStrategy}>
         <div className={s.tasksList}>
-          {(renderItems as any[]).map((item, idx) => {
-            if (item.type === 'header') {
-              const catInfo = CATEGORY_OPTIONS.find(c => c.value === item.cat);
-              return (
-                <div key={`header_${item.cat}_${idx}`} className={s.taskGroupHeader}>
-                  <span className={s.taskGroupIcon}>{catInfo?.label.split(' ')[0] || ''}</span>
-                  <span className={s.taskGroupLabel}>{catInfo?.label.split(' ')[1] || item.cat.toUpperCase()}</span>
-                </div>
-              );
-            }
-            const task = item.task as Task;
-            const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
+          {CATEGORY_ORDER.map(cat => {
+            const catInfo = CATEGORY_OPTIONS.find(c => c.value === cat);
+            const catTasks = grouped[cat];
             return (
-              <SortableTaskItem
-                key={`${type}_${task.id}`}
-                task={task} type={type}
-                isEditing={isEditing}
-                editText={editText} setEditText={setEditText}
-                editCategory={editCategory} setEditCategory={setEditCategory}
-                editMemo={editMemo} setEditMemo={setEditMemo}
-                submitEdit={submitEdit} cancelEdit={cancelEdit}
-                startEdit={() => startEdit(date, task.id, type, task.text, task.category, task.memo)}
-                onDelete={() => deleteTask(date, task.id, type)}
-                onSetStatus={(status) => setTaskStatus(date, task.id, type, status)}
-                onMemoChange={(memo) => onMemoChange(date, task.id, type, memo)}
-                styles={s}
-              />
+              <div key={cat}>
+                <div className={s.taskGroupHeader} id={`cat_${cat}`}>
+                  <span className={s.taskGroupIcon}>{catInfo?.label.split(' ')[0] || ''}</span>
+                  <span className={s.taskGroupLabel}>{catInfo?.label.split(' ')[1] || cat.toUpperCase()}</span>
+                  <span className={s.taskGroupCount}>{catTasks.length}</span>
+                </div>
+                {catTasks.map(task => {
+                  const isEditing = editingTask?.date === date && editingTask?.id === task.id && editingTask?.type === type;
+                  return (
+                    <SortableTaskItem
+                      key={`${type}_${task.id}`}
+                      task={task} type={type}
+                      isEditing={isEditing}
+                      editText={editText} setEditText={setEditText}
+                      editCategory={editCategory} setEditCategory={setEditCategory}
+                      editMemo={editMemo} setEditMemo={setEditMemo}
+                      submitEdit={submitEdit} cancelEdit={cancelEdit}
+                      startEdit={() => startEdit(date, task.id, type, task.text, task.category, task.memo)}
+                      onDelete={() => deleteTask(date, task.id, type)}
+                      onSetStatus={(status) => setTaskStatus(date, task.id, type, status)}
+                      onMemoChange={(memo) => onMemoChange(date, task.id, type, memo)}
+                      styles={s}
+                    />
+                  );
+                })}
+              </div>
             );
           })}
         </div>
