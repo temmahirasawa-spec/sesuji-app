@@ -166,7 +166,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
 };
 
 const CATEGORY_LABELS: { [key: string]: { label: string; icon: string } } = {
-  morning: { label: 'MORNING', icon: '☀' },
+  morning: { label: 'MORNING', icon: '☀️' },
   work: { label: 'WORK', icon: '💻' },
   evening: { label: 'EVENING', icon: '🏋' },
   night: { label: 'NIGHT', icon: '🌙' },
@@ -218,8 +218,10 @@ export default function Home() {
   const [editingTask, setEditingTask] = useState<{ date: string; id: number; type: 'today' | 'daily' } | null>(null);
   const [editText, setEditText] = useState('');
   const [editCategory, setEditCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
+  const [editMemo, setEditMemo] = useState('');
   const [addingTo, setAddingTo] = useState<{ date: string; type: 'today' | 'daily' } | null>(null);
   const [addText, setAddText] = useState('');
+  const [addMemo, setAddMemo] = useState('');
   const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
   const [dayRatings, setDayRatings] = useState<{ [date: string]: { [key: string]: number } }>({});
 
@@ -368,23 +370,35 @@ export default function Home() {
     }
   };
 
-  const addTask = (date: string, type: 'today' | 'daily', text: string, category: 'morning' | 'work' | 'evening' | 'night') => {
+  const addTask = (date: string, type: 'today' | 'daily', text: string, category: 'morning' | 'work' | 'evening' | 'night', memo?: string) => {
     const newTasks = { ...weekTasks };
     const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
     const maxId = taskList.length > 0 ? Math.max(...taskList.map(t => t.id)) : 0;
-    taskList.push({ id: maxId + 1, text, completed: false, category });
+    taskList.push({ id: maxId + 1, text, completed: false, category, memo: memo || undefined });
     setWeekTasks({ ...newTasks });
     saveTasks(`${date}_${type}`, taskList);
     updateProgress(newTasks);
   };
 
-  const editTask = (date: string, taskId: number, type: 'today' | 'daily', newText: string, newCategory?: 'morning' | 'work' | 'evening' | 'night') => {
+  const editTask = (date: string, taskId: number, type: 'today' | 'daily', newText: string, newCategory?: 'morning' | 'work' | 'evening' | 'night', newMemo?: string) => {
     const newTasks = { ...weekTasks };
     const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
     const task = taskList.find(t => t.id === taskId);
     if (task) {
       task.text = newText;
       if (newCategory) task.category = newCategory;
+      task.memo = newMemo || undefined;
+      setWeekTasks({ ...newTasks });
+      saveTasks(`${date}_${type}`, taskList);
+    }
+  };
+
+  const updateTaskMemo = (date: string, taskId: number, type: 'today' | 'daily', memo: string) => {
+    const newTasks = { ...weekTasks };
+    const taskList = type === 'today' ? newTasks[date].today : newTasks[date].daily;
+    const task = taskList.find(t => t.id === taskId);
+    if (task) {
+      task.memo = memo.trim() || undefined;
       setWeekTasks({ ...newTasks });
       saveTasks(`${date}_${type}`, taskList);
     }
@@ -434,32 +448,36 @@ export default function Home() {
 
   const dates = Object.keys(WEEK_DATA);
 
-  const startEdit = (date: string, id: number, type: 'today' | 'daily', text: string, category?: string) => {
+  const startEdit = (date: string, id: number, type: 'today' | 'daily', text: string, category?: string, memo?: string) => {
     setEditingTask({ date, id, type });
     setEditText(text);
     setEditCategory((category as any) || 'morning');
+    setEditMemo(memo || '');
   };
 
   const submitEdit = () => {
     if (editingTask && editText.trim()) {
-      editTask(editingTask.date, editingTask.id, editingTask.type, editText.trim(), editCategory);
+      editTask(editingTask.date, editingTask.id, editingTask.type, editText.trim(), editCategory, editMemo);
     }
     setEditingTask(null);
     setEditText('');
+    setEditMemo('');
   };
 
   const startAdd = (date: string, type: 'today' | 'daily') => {
     setAddingTo({ date, type });
     setAddText('');
+    setAddMemo('');
     setAddCategory('morning');
   };
 
   const submitAdd = () => {
     if (addingTo && addText.trim()) {
-      addTask(addingTo.date, addingTo.type, addText.trim(), addCategory);
+      addTask(addingTo.date, addingTo.type, addText.trim(), addCategory, addMemo);
     }
     setAddingTo(null);
     setAddText('');
+    setAddMemo('');
   };
 
   const handleReorder = (date: string, type: 'today' | 'daily', reordered: Task[]) => {
@@ -514,8 +532,10 @@ export default function Home() {
       tasks={tasks} date={date} type={type}
       editingTask={editingTask} editText={editText} setEditText={setEditText}
       editCategory={editCategory} setEditCategory={setEditCategory}
-      submitEdit={submitEdit} cancelEdit={() => setEditingTask(null)}
+      editMemo={editMemo} setEditMemo={setEditMemo}
+      submitEdit={submitEdit} cancelEdit={() => { setEditingTask(null); setEditMemo(''); }}
       startEdit={startEdit} deleteTask={deleteTask} setTaskStatus={setTaskStatus}
+      onMemoChange={updateTaskMemo}
       onReorder={handleReorder} styles={styles}
     />
   );
@@ -539,6 +559,13 @@ export default function Home() {
           placeholder="タスク名を入力..."
           className={styles.taskEditInput}
           autoFocus
+        />
+        <textarea
+          value={addMemo}
+          onChange={(e) => setAddMemo(e.target.value)}
+          placeholder="メモ（任意）"
+          className={styles.addMemoInput}
+          rows={2}
         />
         <select value={addCategory} onChange={(e) => setAddCategory(e.target.value as any)} className={styles.addCategorySelect}>
           {CATEGORY_ORDER.map(cat => (
@@ -688,6 +715,10 @@ export default function Home() {
                             onClick={() => handleRating(date, cat.key, currentValue === 1 ? 0 : 1)}
                             className={`${styles.ratingBoolBtn} ${styles.ratingBoolYes} ${currentValue === 1 ? styles.ratingBoolActive : ''}`}
                           >&#9675;</button>
+                          <button
+                            onClick={() => handleRating(date, cat.key, currentValue === 2 ? 0 : 2)}
+                            className={`${styles.ratingBoolBtn} ${styles.ratingBoolMid} ${currentValue === 2 ? styles.ratingBoolActive : ''}`}
+                          >&#9651;</button>
                           <button
                             onClick={() => handleRating(date, cat.key, currentValue === -1 ? 0 : -1)}
                             className={`${styles.ratingBoolBtn} ${styles.ratingBoolNo} ${currentValue === -1 ? styles.ratingBoolActive : ''}`}

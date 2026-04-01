@@ -5,7 +5,7 @@ import { ParsedTask, TaskCategory } from '@/types/taskParsing';
 import styles from './TaskConfirmationFlow.module.css';
 
 const CATEGORY_DISPLAY: Record<TaskCategory, { label: string; icon: string; color: string }> = {
-  morning: { label: 'Morning', icon: '☀', color: '#f59e0b' },
+  morning: { label: 'Morning', icon: '☀️', color: '#f59e0b' },
   work: { label: 'Work', icon: '💻', color: '#6366f1' },
   evening: { label: 'Evening', icon: '🏋', color: '#10b981' },
   night: { label: 'Night', icon: '🌙', color: '#8b5cf6' },
@@ -114,6 +114,18 @@ export default function TaskConfirmationFlow({ tasks: initialTasks, date, onComp
                 }
               }}
               autoFocus
+              disabled={isSaving}
+            />
+          </div>
+
+          <div className={styles.taskField}>
+            <label className={styles.fieldLabel}>メモ</label>
+            <textarea
+              className={styles.memoInput}
+              value={current.memo || ''}
+              onChange={(e) => updateCurrent({ memo: e.target.value })}
+              placeholder="メモ（任意）"
+              rows={2}
               disabled={isSaving}
             />
           </div>

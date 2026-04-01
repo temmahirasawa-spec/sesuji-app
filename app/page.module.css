@@ -961,10 +961,153 @@
   color: white;
 }
 
+.ratingBoolMid:hover {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.ratingBoolMid.ratingBoolActive {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: white;
+}
+
 .ratingBoolNo.ratingBoolActive {
   background: #ef4444;
   border-color: #ef4444;
   color: white;
+}
+
+/* Memo styles */
+.memoToggle {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.memoToggle:hover {
+  background: var(--color-border-light);
+}
+
+.memoToggleOpen {
+  transform: rotate(180deg);
+}
+
+.memoDisplay {
+  padding: 0.4rem 0 0 2.5rem;
+}
+
+.memoTextarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  background: var(--color-border-light);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+}
+
+.memoTextarea:focus {
+  border-color: var(--color-primary-light);
+}
+
+.memoAddBtn {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  margin-left: 2.5rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  opacity: 0;
+}
+
+.taskItem:hover .memoAddBtn {
+  opacity: 1;
+}
+
+.memoAddBtn:hover {
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+/* Task edit memo */
+.taskEditFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.taskEditMemo {
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  resize: none;
+  outline: none;
+  background: var(--color-surface);
+  line-height: 1.5;
+}
+
+.taskEditMemo:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+.taskEditBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.taskContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.addMemoInput {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  resize: none;
+  outline: none;
+  background: var(--color-surface);
+  line-height: 1.5;
+}
+
+.addMemoInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+.addMemoInput::placeholder {
+  color: var(--color-text-muted);
 }
 
 /* Week List View */

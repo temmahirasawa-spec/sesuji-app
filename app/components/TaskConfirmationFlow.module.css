@@ -138,6 +138,30 @@
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
 }
 
+.memoInput {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+  transition: border-color 0.15s ease;
+}
+
+.memoInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+.memoInput::placeholder {
+  color: var(--color-text-muted);
+}
+
 /* Category Grid */
 .categoryGrid {
   display: grid;

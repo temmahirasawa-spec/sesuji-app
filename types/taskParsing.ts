@@ -5,6 +5,7 @@ export interface ParsedTask {
   category: TaskCategory;
   time?: string;        // "14:00" など抽出された時刻
   priority?: 'high' | 'normal' | 'low';
+  memo?: string;
   originalText: string; // 音声入力の元テキスト
 }
 

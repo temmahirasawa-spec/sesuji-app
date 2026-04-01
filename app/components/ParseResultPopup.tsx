@@ -5,7 +5,7 @@ import { ParsedTask, TaskCategory } from '@/types/taskParsing';
 import styles from './ParseResultPopup.module.css';
 
 const CATEGORY_DISPLAY: Record<TaskCategory, { label: string; icon: string }> = {
-  morning: { label: 'Morning', icon: '☀' },
+  morning: { label: 'Morning', icon: '☀️' },
   work: { label: 'Work', icon: '💻' },
   evening: { label: 'Evening', icon: '🏋' },
   night: { label: 'Night', icon: '🌙' },

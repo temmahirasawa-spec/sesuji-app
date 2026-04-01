@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       text: t.text,
       completed: false,
       category: t.category,
+      memo: t.memo || undefined,
     }));
 
     const merged = [...existingTasks, ...newTasks];

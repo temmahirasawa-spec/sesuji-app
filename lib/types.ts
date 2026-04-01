@@ -6,6 +6,7 @@ export interface Task {
   completed: boolean; // legacy compat: true = done
   status?: TaskStatus;
   category?: 'morning' | 'work' | 'evening' | 'night';
+  memo?: string;
 }
 
 export interface TimeRecord {
