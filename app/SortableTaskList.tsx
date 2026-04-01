@@ -48,8 +48,9 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, editCa
           <textarea
             value={editMemo}
             onChange={(e) => setEditMemo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) { e.preventDefault(); submitEdit(); } if (e.key === 'Escape') cancelEdit(); }}
             className={s.taskEditMemo}
-            placeholder="メモ（任意）"
+            placeholder="メモ（任意）- Cmd+Enter で確定"
             rows={2}
           />
           <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className={s.addCategorySelect}>
@@ -103,6 +104,8 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, editCa
               className={s.memoTextarea}
               value={task.memo || ''}
               onChange={(e) => onMemoChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setExpanded(false); } }}
+              placeholder="Cmd+Enter で閉じる"
               rows={2}
             />
           </div>
