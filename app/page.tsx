@@ -213,7 +213,12 @@ export default function Home() {
   const [celebrations, setCelebrations] = useState<Celebration[]>([]);
   const [totalProgress, setTotalProgress] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('day');
-  const [selectedDate, setSelectedDate] = useState('3/31');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    const key = `${now.getMonth() + 1}/${now.getDate()}`;
+    const dates = Object.keys(WEEK_DATA);
+    return dates.includes(key) ? key : dates[0];
+  });
   const [timeRecords, setTimeRecords] = useState<{ [key: string]: string }>({});
   const [editingTask, setEditingTask] = useState<{ date: string; id: number; type: 'today' | 'daily' } | null>(null);
   const [editText, setEditText] = useState('');
