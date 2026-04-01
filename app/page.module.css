@@ -658,12 +658,30 @@
   color: white;
 }
 
-.taskText {
+.taskTextWrap {
   flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.taskText {
+  display: block;
   font-size: 0.85rem;
   color: var(--color-text);
   font-weight: 500;
-  cursor: pointer;
+}
+
+.taskMemoPreview {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .taskDone .taskText {
@@ -978,76 +996,6 @@
   color: white;
 }
 
-/* Memo styles */
-.memoToggle {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: none;
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-}
-
-.memoToggle:hover {
-  background: var(--color-border-light);
-}
-
-.memoToggleOpen {
-  transform: rotate(180deg);
-}
-
-.memoDisplay {
-  padding: 0.4rem 0 0 2.5rem;
-}
-
-.memoTextarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  background: var(--color-border-light);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
-  resize: vertical;
-  outline: none;
-  line-height: 1.5;
-}
-
-.memoTextarea:focus {
-  border-color: var(--color-primary-light);
-}
-
-.memoAddBtn {
-  border: none;
-  background: none;
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.15rem 0.4rem;
-  margin-left: 2.5rem;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  opacity: 0;
-}
-
-.taskItem:hover .memoAddBtn {
-  opacity: 1;
-}
-
-.memoAddBtn:hover {
-  color: var(--color-primary);
-  background: rgba(99, 102, 241, 0.06);
-}
-
 /* Task edit memo */
 .taskEditFields {
   display: flex;
@@ -1082,10 +1030,6 @@
   flex-shrink: 0;
 }
 
-.taskContent {
-  flex: 1;
-  min-width: 0;
-}
 
 .addMemoInput {
   width: 100%;

@@ -68,53 +68,29 @@ function SortableTaskItem({ task, type, isEditing, editText, setEditText, editCa
   }
 
   const statusClass = status === 'done' ? s.taskDone : status === 'failed' ? s.taskFailed : '';
-  const hasMemo = !!task.memo;
 
   return (
     <div ref={setNodeRef} style={style} className={`${s.taskItem} ${statusClass} ${type === 'daily' ? s.taskItemDaily : ''}`}>
       <div className={s.taskDragHandle} {...attributes} {...listeners}>
         <span>&#8942;&#8942;</span>
       </div>
-      <div className={s.taskContent}>
-        <div className={s.taskLabel}>
-          <div className={s.taskStatusBtns}>
-            <button
-              onClick={() => onSetStatus(status === 'done' ? 'pending' : 'done')}
-              className={`${s.taskStatusBtn} ${s.taskStatusDone} ${status === 'done' ? s.taskStatusActive : ''}`}
-              title="完了"
-            >&#10003;</button>
-            <button
-              onClick={() => onSetStatus(status === 'failed' ? 'pending' : 'failed')}
-              className={`${s.taskStatusBtn} ${s.taskStatusFail} ${status === 'failed' ? s.taskStatusActive : ''}`}
-              title="未達"
-            >&#10005;</button>
-          </div>
-          <span className={s.taskText} onClick={startEdit}>{task.text}</span>
-          {hasMemo && (
-            <button
-              className={`${s.memoToggle} ${expanded ? s.memoToggleOpen : ''}`}
-              onClick={() => setExpanded(!expanded)}
-              title="メモ"
-            >&#9662;</button>
-          )}
+      <div className={s.taskLabel}>
+        <div className={s.taskStatusBtns}>
+          <button
+            onClick={() => onSetStatus(status === 'done' ? 'pending' : 'done')}
+            className={`${s.taskStatusBtn} ${s.taskStatusDone} ${status === 'done' ? s.taskStatusActive : ''}`}
+            title="完了"
+          >&#10003;</button>
+          <button
+            onClick={() => onSetStatus(status === 'failed' ? 'pending' : 'failed')}
+            className={`${s.taskStatusBtn} ${s.taskStatusFail} ${status === 'failed' ? s.taskStatusActive : ''}`}
+            title="未達"
+          >&#10005;</button>
         </div>
-        {expanded && hasMemo && (
-          <div className={s.memoDisplay}>
-            <textarea
-              className={s.memoTextarea}
-              value={task.memo || ''}
-              onChange={(e) => onMemoChange(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setExpanded(false); } }}
-              placeholder="Cmd+Enter で閉じる"
-              rows={2}
-            />
-          </div>
-        )}
-        {!hasMemo && !expanded && (
-          <button className={s.memoAddBtn} onClick={() => { onMemoChange(' '); setExpanded(true); }}>
-            + メモ
-          </button>
-        )}
+        <div className={s.taskTextWrap} onClick={startEdit}>
+          <span className={s.taskText}>{task.text}</span>
+          {task.memo && <span className={s.taskMemoPreview}>{task.memo}</span>}
+        </div>
       </div>
       <div className={s.taskActions}>
         <button onClick={onDelete} className={`${s.taskActionBtn} ${s.taskActionDelete}`} title="削除">&#10005;</button>
