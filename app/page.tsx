@@ -485,6 +485,49 @@ export default function Home() {
     setAddMemo('');
   };
 
+  const getPrevDate = (date: string): string | null => {
+    const allDates = Object.keys(WEEK_DATA);
+    const idx = allDates.indexOf(date);
+    return idx > 0 ? allDates[idx - 1] : null;
+  };
+
+  const carryOverFromPrevDay = (date: string) => {
+    const prevDate = getPrevDate(date);
+    if (!prevDate || !weekTasks[prevDate]) return;
+
+    const prevTodayIncomplete = weekTasks[prevDate].today.filter(t => {
+      const s = t.status || (t.completed ? 'done' : 'pending');
+      return s === 'pending';
+    });
+
+    if (prevTodayIncomplete.length === 0) return;
+
+    const newTasks = { ...weekTasks };
+    const todayList = [...newTasks[date].today];
+    const maxId = todayList.length > 0 ? Math.max(...todayList.map(t => t.id)) : 0;
+    const existingTexts = new Set(todayList.map(t => t.text));
+
+    let added = 0;
+    prevTodayIncomplete.forEach((t, i) => {
+      if (existingTexts.has(t.text)) return;
+      todayList.push({
+        id: maxId + 1 + added,
+        text: t.text,
+        completed: false,
+        category: t.category,
+        memo: t.memo,
+      });
+      added++;
+    });
+
+    if (added === 0) return;
+
+    newTasks[date] = { ...newTasks[date], today: todayList };
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_today`, todayList);
+    updateProgress(newTasks);
+  };
+
   const handleReorder = (date: string, type: 'today' | 'daily', reordered: Task[]) => {
     const newTasks = { ...weekTasks };
     if (type === 'today') {
@@ -684,10 +727,20 @@ export default function Home() {
 
             {/* TODAY tasks */}
             <div className={styles.taskSection}>
-              <h4 className={styles.taskSectionTitle}>
-                <span className={styles.taskSectionBadge}>TODAY</span>
-                <span className={styles.taskSectionSub}>{date}のタスク</span>
-              </h4>
+              <div className={styles.taskSectionHeader}>
+                <h4 className={styles.taskSectionTitle}>
+                  <span className={styles.taskSectionBadge}>TODAY</span>
+                  <span className={styles.taskSectionSub}>{date}のタスク</span>
+                </h4>
+                {getPrevDate(date) && (
+                  <button
+                    className={styles.carryOverBtn}
+                    onClick={() => carryOverFromPrevDay(date)}
+                  >
+                    &#8592; 前日の未完了を読込
+                  </button>
+                )}
+              </div>
               {renderTaskList(tasks.today, date, 'today')}
               {renderAddForm(date, 'today')}
             </div>
