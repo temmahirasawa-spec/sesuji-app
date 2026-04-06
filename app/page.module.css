@@ -133,6 +133,115 @@
 
 /* Progress (legacy - kept for reference) */
 
+/* Calendar */
+.calendarSection {
+  margin-top: 0.5rem;
+}
+
+.calendarNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.calendarNavBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.calendarNavBtn:hover {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.calendarMonthLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+  min-width: 80px;
+  text-align: center;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendarDayLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 0.2rem 0;
+}
+
+.calendarDay {
+  position: relative;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+}
+
+.calendarDayHasData {
+  color: var(--color-text);
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--color-border-light);
+}
+
+.calendarDayHasData:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.calendarDaySelected {
+  background: var(--color-primary);
+  color: white;
+}
+
+.calendarDaySelected:hover {
+  background: var(--color-primary-dark);
+}
+
+.calendarDayToday {
+  box-shadow: inset 0 0 0 1.5px var(--color-accent);
+}
+
+.calendarDayDot {
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.calendarDaySelected .calendarDayDot {
+  background: white;
+}
+
 /* Day View */
 .dayViewSection {
   padding: 1.5rem 0 3rem;

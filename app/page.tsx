@@ -227,8 +227,12 @@ export default function Home() {
   const [addingTo, setAddingTo] = useState<{ date: string; type: 'today' | 'daily' } | null>(null);
   const [addText, setAddText] = useState('');
   const [addMemo, setAddMemo] = useState('');
-  const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
+  const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('work');
   const [dayRatings, setDayRatings] = useState<{ [date: string]: { [key: string]: number } }>({});
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() }; // 0-indexed
+  });
   const [comments, setComments] = useState<{ [key: string]: string }>({});
   const [reviews, setReviews] = useState<{ [key: string]: string }>({});
   const [reviewLoading, setReviewLoading] = useState<string | null>(null);
@@ -508,7 +512,7 @@ export default function Home() {
     setAddingTo({ date, type });
     setAddText('');
     setAddMemo('');
-    setAddCategory('morning');
+    setAddCategory('work');
   };
 
   const submitAdd = () => {
@@ -959,22 +963,54 @@ export default function Home() {
               <button className={`${styles.viewBtn} ${viewMode === 'list' ? styles.viewBtnActive : ''}`} onClick={() => setViewMode('list')}>List</button>
             </div>
           </div>
-          {viewMode === 'day' && (
-            <div className={styles.daySelector}>
-              {dates.map(date => {
-                const prog = getDayProgress(date);
-                return (
-                  <button key={date} className={`${styles.daySelectorBtn} ${selectedDate === date ? styles.daySelectorBtnActive : ''}`} onClick={() => setSelectedDate(date)}>
-                    <span className={styles.daySelectorDay}>{WEEK_DATA[date].day}</span>
-                    <span className={styles.daySelectorDate}>{date}</span>
-                    <div className={styles.daySelectorProgress}>
-                      <div className={styles.daySelectorProgressFill} style={{ width: `${prog}%` }}></div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {viewMode === 'day' && (() => {
+            const { year, month } = calendarMonth;
+            const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthLabel = `${year}年${month + 1}月`;
+            const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+            const cells: (number | null)[] = [];
+            for (let i = 0; i < firstDay; i++) cells.push(null);
+            for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+            return (
+              <div className={styles.calendarSection}>
+                <div className={styles.calendarNav}>
+                  <button className={styles.calendarNavBtn} onClick={() => setCalendarMonth(p => {
+                    const d = new Date(p.year, p.month - 1, 1);
+                    return { year: d.getFullYear(), month: d.getMonth() };
+                  })}>&#8249;</button>
+                  <span className={styles.calendarMonthLabel}>{monthLabel}</span>
+                  <button className={styles.calendarNavBtn} onClick={() => setCalendarMonth(p => {
+                    const d = new Date(p.year, p.month + 1, 1);
+                    return { year: d.getFullYear(), month: d.getMonth() };
+                  })}>&#8250;</button>
+                </div>
+                <div className={styles.calendarGrid}>
+                  {dayLabels.map(l => <div key={l} className={styles.calendarDayLabel}>{l}</div>)}
+                  {cells.map((day, i) => {
+                    if (day === null) return <div key={`empty_${i}`} />;
+                    const dateKey = `${month + 1}/${day}`;
+                    const hasData = !!WEEK_DATA[dateKey];
+                    const isSelected = selectedDate === dateKey;
+                    const isToday = (() => { const n = new Date(); return n.getFullYear() === year && n.getMonth() === month && n.getDate() === day; })();
+                    const prog = hasData ? getDayProgress(dateKey) : 0;
+                    return (
+                      <button
+                        key={dateKey}
+                        className={`${styles.calendarDay} ${isSelected ? styles.calendarDaySelected : ''} ${isToday ? styles.calendarDayToday : ''} ${hasData ? styles.calendarDayHasData : ''}`}
+                        onClick={() => { if (hasData) setSelectedDate(dateKey); }}
+                        disabled={!hasData}
+                      >
+                        <span>{day}</span>
+                        {hasData && prog > 0 && <div className={styles.calendarDayDot} style={{ opacity: prog / 100 }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </header>
 
@@ -983,8 +1019,8 @@ export default function Home() {
           <div className={styles.container}>
             {renderDayCard(selectedDate)}
 
-            {/* Weekly Section (shown on last day or always accessible) */}
-            {selectedDate === dates[dates.length - 1] && (
+            {/* Weekly Section (shown on Sunday) */}
+            {WEEK_DATA[selectedDate]?.day === '日' && (
               <div className={styles.weeklySection}>
                 <div className={styles.diarySection}>
                   <h4 className={styles.taskSectionTitle}>
