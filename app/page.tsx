@@ -591,15 +591,25 @@ export default function Home() {
           if (comment) data += `\n本人コメント: ${comment}`;
         }
       } else {
-        const dates = Object.keys(WEEK_DATA);
+        // 選択中の日曜日を基準に、その週の月〜日のデータのみ使う
+        const allDates = Object.keys(WEEK_DATA);
+        const sundayIdx = allDates.indexOf(selectedDate);
+        // 日曜から遡って最大7日分（月〜日）
+        const weekDates: string[] = [];
+        for (let i = Math.max(0, sundayIdx - 6); i <= sundayIdx && i < allDates.length; i++) {
+          weekDates.push(allDates[i]);
+        }
         const lines: string[] = [];
-        dates.forEach(d => {
+        lines.push(`対象期間: ${weekDates[0]} 〜 ${weekDates[weekDates.length - 1]}`);
+        weekDates.forEach(d => {
           const t = weekTasks[d];
           if (!t) return;
           const all = [...t.today, ...t.daily];
           const done = all.filter(t => (t.status || (t.completed ? 'done' : 'pending')) === 'done').length;
+          const failed = all.filter(t => t.status === 'failed').length;
           const total = all.length;
-          lines.push(`${d}: ${done}/${total}完了`);
+          const dayInfo = WEEK_DATA[d];
+          lines.push(`${d}(${dayInfo?.day || ''}): ${done}完了 / ${failed}未達 / ${total}件中`);
           const c = comments[`day_${d}`];
           if (c) lines.push(`  コメント: ${c}`);
         });
@@ -929,7 +939,13 @@ export default function Home() {
                   {reviewLoading === `day_${date}` ? '生成中...' : 'AI レビューを生成'}
                 </button>
               </div>
-              {reviews[`day_${date}`] && (
+              {reviewLoading === `day_${date}` && (
+                <div className={styles.reviewLoading}>
+                  <div className={styles.reviewLoadingBar} />
+                  <p className={styles.reviewLoadingText}>AIがタスクデータを分析しています...</p>
+                </div>
+              )}
+              {!reviewLoading && reviews[`day_${date}`] && (
                 <div className={styles.reviewContent}>
                   {reviews[`day_${date}`]}
                 </div>
@@ -1046,7 +1062,13 @@ export default function Home() {
                       {reviewLoading === 'weekly' ? '生成中...' : 'AI 週間レビューを生成'}
                     </button>
                   </div>
-                  {reviews['weekly'] && (
+                  {reviewLoading === 'weekly' && (
+                    <div className={styles.reviewLoading}>
+                      <div className={styles.reviewLoadingBar} />
+                      <p className={styles.reviewLoadingText}>AIが1週間のデータを分析しています...</p>
+                    </div>
+                  )}
+                  {reviewLoading !== 'weekly' && reviews['weekly'] && (
                     <div className={styles.reviewContent}>
                       {reviews['weekly']}
                     </div>
