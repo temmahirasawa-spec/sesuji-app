@@ -133,26 +133,22 @@
 
 /* Progress (legacy - kept for reference) */
 
-/* Calendar */
-.calendarSection {
-  margin-top: 0.5rem;
-}
-
-.calendarNav {
+/* Date Strip */
+.dateStrip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
 }
 
-.calendarNavBtn {
-  width: 28px;
-  height: 28px;
+.dateStripNav {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-surface);
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
@@ -161,84 +157,99 @@
   transition: all 0.15s ease;
 }
 
-.calendarNavBtn:hover {
+.dateStripNav:hover {
   border-color: var(--color-primary-light);
   color: var(--color-primary);
 }
 
-.calendarMonthLabel {
-  font-size: 0.8rem;
-  font-weight: 700;
+.dateStripMonth {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
   color: var(--color-text);
-  min-width: 80px;
+  width: 28px;
   text-align: center;
 }
 
-.calendarGrid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+.dateStripScroll {
+  display: flex;
+  gap: 0.2rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex: 1;
+  padding: 0.15rem 0;
 }
 
-.calendarDayLabel {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  text-align: center;
-  padding: 0.2rem 0;
+.dateStripScroll::-webkit-scrollbar {
+  display: none;
 }
 
-.calendarDay {
-  position: relative;
-  aspect-ratio: 1;
+.dateStripDay {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  width: 36px;
+  padding: 0.3rem 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: none;
   font-family: inherit;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
   cursor: default;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--color-text-muted);
   transition: all 0.1s ease;
+  position: relative;
 }
 
-.calendarDayHasData {
+.dateStripDow {
+  font-size: 0.5rem;
+  font-weight: 600;
+}
+
+.dateStripNum {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.dateStripDayHasData {
   color: var(--color-text);
-  font-weight: 700;
   cursor: pointer;
   background: var(--color-border-light);
 }
 
-.calendarDayHasData:hover {
+.dateStripDayHasData .dateStripNum {
+  font-weight: 700;
+}
+
+.dateStripDayHasData:hover {
   background: rgba(99, 102, 241, 0.08);
 }
 
-.calendarDaySelected {
+.dateStripDaySelected {
   background: var(--color-primary);
   color: white;
 }
 
-.calendarDaySelected:hover {
+.dateStripDaySelected:hover {
   background: var(--color-primary-dark);
 }
 
-.calendarDayToday {
+.dateStripDayToday {
   box-shadow: inset 0 0 0 1.5px var(--color-accent);
 }
 
-.calendarDayDot {
+.dateStripDot {
   position: absolute;
-  bottom: 3px;
+  bottom: 2px;
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--color-success);
 }
 
-.calendarDaySelected .calendarDayDot {
+.dateStripDaySelected .dateStripDot {
   background: white;
 }
 

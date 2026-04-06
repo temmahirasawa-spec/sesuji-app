@@ -965,32 +965,22 @@ export default function Home() {
           </div>
           {viewMode === 'day' && (() => {
             const { year, month } = calendarMonth;
-            const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const monthLabel = `${year}年${month + 1}月`;
-            const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
-            const cells: (number | null)[] = [];
-            for (let i = 0; i < firstDay; i++) cells.push(null);
-            for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+            const monthLabel = `${month + 1}月`;
+            const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
 
             return (
-              <div className={styles.calendarSection}>
-                <div className={styles.calendarNav}>
-                  <button className={styles.calendarNavBtn} onClick={() => setCalendarMonth(p => {
-                    const d = new Date(p.year, p.month - 1, 1);
-                    return { year: d.getFullYear(), month: d.getMonth() };
-                  })}>&#8249;</button>
-                  <span className={styles.calendarMonthLabel}>{monthLabel}</span>
-                  <button className={styles.calendarNavBtn} onClick={() => setCalendarMonth(p => {
-                    const d = new Date(p.year, p.month + 1, 1);
-                    return { year: d.getFullYear(), month: d.getMonth() };
-                  })}>&#8250;</button>
-                </div>
-                <div className={styles.calendarGrid}>
-                  {dayLabels.map(l => <div key={l} className={styles.calendarDayLabel}>{l}</div>)}
-                  {cells.map((day, i) => {
-                    if (day === null) return <div key={`empty_${i}`} />;
+              <div className={styles.dateStrip}>
+                <button className={styles.dateStripNav} onClick={() => setCalendarMonth(p => {
+                  const d = new Date(p.year, p.month - 1, 1);
+                  return { year: d.getFullYear(), month: d.getMonth() };
+                })}>&#8249;</button>
+                <span className={styles.dateStripMonth}>{monthLabel}</span>
+                <div className={styles.dateStripScroll}>
+                  {Array.from({ length: daysInMonth }, (_, i) => {
+                    const day = i + 1;
                     const dateKey = `${month + 1}/${day}`;
+                    const dow = new Date(year, month, day).getDay();
                     const hasData = !!WEEK_DATA[dateKey];
                     const isSelected = selectedDate === dateKey;
                     const isToday = (() => { const n = new Date(); return n.getFullYear() === year && n.getMonth() === month && n.getDate() === day; })();
@@ -998,16 +988,21 @@ export default function Home() {
                     return (
                       <button
                         key={dateKey}
-                        className={`${styles.calendarDay} ${isSelected ? styles.calendarDaySelected : ''} ${isToday ? styles.calendarDayToday : ''} ${hasData ? styles.calendarDayHasData : ''}`}
+                        className={`${styles.dateStripDay} ${isSelected ? styles.dateStripDaySelected : ''} ${isToday ? styles.dateStripDayToday : ''} ${hasData ? styles.dateStripDayHasData : ''}`}
                         onClick={() => { if (hasData) setSelectedDate(dateKey); }}
                         disabled={!hasData}
                       >
-                        <span>{day}</span>
-                        {hasData && prog > 0 && <div className={styles.calendarDayDot} style={{ opacity: prog / 100 }} />}
+                        <span className={styles.dateStripDow}>{dayNames[dow]}</span>
+                        <span className={styles.dateStripNum}>{day}</span>
+                        {hasData && prog > 0 && <div className={styles.dateStripDot} />}
                       </button>
                     );
                   })}
                 </div>
+                <button className={styles.dateStripNav} onClick={() => setCalendarMonth(p => {
+                  const d = new Date(p.year, p.month + 1, 1);
+                  return { year: d.getFullYear(), month: d.getMonth() };
+                })}>&#8250;</button>
               </div>
             );
           })()}
