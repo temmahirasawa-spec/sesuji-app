@@ -908,7 +908,8 @@ export default function Home() {
                 className={styles.diaryTextarea}
                 value={comments[`day_${date}`] || ''}
                 onChange={(e) => handleCommentChange(`day_${date}`, e.target.value)}
-                placeholder="今日の出来事、感じたこと、反省点など..."
+                onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }}
+                placeholder="今日の出来事、感じたこと、反省点など... (Cmd+Enterで確定)"
                 rows={3}
               />
             </div>
@@ -1026,7 +1027,8 @@ export default function Home() {
                     className={styles.diaryTextarea}
                     value={comments['weekly'] || ''}
                     onChange={(e) => handleCommentChange('weekly', e.target.value)}
-                    placeholder="今週全体の振り返り、来週への意気込み..."
+                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }}
+                    placeholder="今週全体の振り返り、来週への意気込み... (Cmd+Enterで確定)"
                     rows={4}
                   />
                 </div>
