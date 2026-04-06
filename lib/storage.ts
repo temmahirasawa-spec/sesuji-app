@@ -83,6 +83,40 @@ export const loadRatingsCloud = async (date: string): Promise<{ [key: string]: n
 };
 
 // ============================
+// Comments (daily / weekly diary)
+// ============================
+
+const COMMENTS_KEY = 'sesuji_comments';
+
+export const loadComment = (key: string): string | null =>
+  localLoad(COMMENTS_KEY, key);
+
+export const saveComment = (key: string, text: string) => {
+  localSave(COMMENTS_KEY, key, text);
+  cloudSave(`comment_${key}`, text);
+};
+
+export const loadCommentCloud = async (key: string): Promise<string | null> =>
+  await cloudLoad(`comment_${key}`);
+
+// ============================
+// AI Reviews
+// ============================
+
+const REVIEWS_KEY = 'sesuji_reviews';
+
+export const loadReview = (key: string): string | null =>
+  localLoad(REVIEWS_KEY, key);
+
+export const saveReview = (key: string, text: string) => {
+  localSave(REVIEWS_KEY, key, text);
+  cloudSave(`review_${key}`, text);
+};
+
+export const loadReviewCloud = async (key: string): Promise<string | null> =>
+  await cloudLoad(`review_${key}`);
+
+// ============================
 // Merge
 // ============================
 

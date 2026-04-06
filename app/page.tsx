@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Task, TaskStatus, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud, loadRatings, saveRatings, loadRatingsCloud } from '@/lib/storage';
+import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud, loadRatings, saveRatings, loadRatingsCloud, loadComment, saveComment, loadCommentCloud, loadReview, saveReview, loadReviewCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import { ParsedTask } from '@/types/taskParsing';
 import VoiceInput from './components/VoiceInput';
@@ -229,6 +229,9 @@ export default function Home() {
   const [addMemo, setAddMemo] = useState('');
   const [addCategory, setAddCategory] = useState<'morning' | 'work' | 'evening' | 'night'>('morning');
   const [dayRatings, setDayRatings] = useState<{ [date: string]: { [key: string]: number } }>({});
+  const [comments, setComments] = useState<{ [key: string]: string }>({});
+  const [reviews, setReviews] = useState<{ [key: string]: string }>({});
+  const [reviewLoading, setReviewLoading] = useState<string | null>(null);
 
   useEffect(() => {
     // 1. まずlocalStorageから即座に表示
@@ -239,6 +242,8 @@ export default function Home() {
     // 3/31のdailyルーティンをテンプレートとして取得
     const baseDaily = loadTasks('3/31_daily');
     const ratings: { [date: string]: { [key: string]: number } } = {};
+    const localComments: { [key: string]: string } = {};
+    const localReviews: { [key: string]: string } = {};
 
     // 3/31のルーティン構成（タスクのリスト）を他の日にも反映
     // 各日の完了状態は個別に保持する
@@ -283,14 +288,28 @@ export default function Home() {
       // 評価データ読み込み
       const r = loadRatings(date);
       if (r) ratings[date] = r;
+
+      // コメント・レビュー読み込み
+      const c = loadComment(`day_${date}`);
+      if (c) localComments[`day_${date}`] = c;
+      const rv = loadReview(`day_${date}`);
+      if (rv) localReviews[`day_${date}`] = rv;
     });
 
     if (syncVersion !== currentSyncVersion) {
       localStorage.setItem('sesuji_daily_sync_v', currentSyncVersion);
     }
+    // 週間コメント・レビュー
+    const wc = loadComment('weekly');
+    if (wc) localComments['weekly'] = wc;
+    const wr = loadReview('weekly');
+    if (wr) localReviews['weekly'] = wr;
+
     setWeekTasks(loaded);
     setTimeRecords(times);
     setDayRatings(ratings);
+    setComments(localComments);
+    setReviews(localReviews);
     setIsLoaded(true);
     updateProgress(loaded);
 
@@ -338,12 +357,28 @@ export default function Home() {
         }
       }
 
+      // クラウドからコメント・レビューも同期
+      const cloudComments: { [key: string]: string } = { ...localComments };
+      const cloudReviewsData: { [key: string]: string } = { ...localReviews };
+      for (const d of dates) {
+        const cc = await loadCommentCloud(`day_${d}`);
+        if (cc) cloudComments[`day_${d}`] = cc;
+        const cr = await loadReviewCloud(`day_${d}`);
+        if (cr) cloudReviewsData[`day_${d}`] = cr;
+      }
+      const wcCloud = await loadCommentCloud('weekly');
+      if (wcCloud) cloudComments['weekly'] = wcCloud;
+      const wrCloud = await loadReviewCloud('weekly');
+      if (wrCloud) cloudReviewsData['weekly'] = wrCloud;
+
       if (hasCloudData) {
         setWeekTasks(cloudLoaded);
         setTimeRecords(cloudTimes);
         if (Object.keys(cloudRatings).length > 0) setDayRatings(cloudRatings);
         updateProgress(cloudLoaded);
       }
+      setComments(cloudComments);
+      setReviews(cloudReviewsData);
     })();
   }, []);
 
@@ -526,6 +561,64 @@ export default function Home() {
     setWeekTasks({ ...newTasks });
     saveTasks(`${date}_today`, todayList);
     updateProgress(newTasks);
+  };
+
+  const handleCommentChange = (key: string, text: string) => {
+    setComments(prev => ({ ...prev, [key]: text }));
+    saveComment(key, text);
+  };
+
+  const requestAIReview = async (key: string, type: 'daily' | 'weekly') => {
+    setReviewLoading(key);
+    try {
+      let data = '';
+      if (type === 'daily') {
+        const date = key.replace('day_', '');
+        const t = weekTasks[date];
+        if (t) {
+          const allTasks = [...t.today, ...t.daily];
+          const done = allTasks.filter(t => (t.status || (t.completed ? 'done' : 'pending')) === 'done');
+          const failed = allTasks.filter(t => (t.status || (t.completed ? 'done' : 'pending')) === 'failed');
+          const pending = allTasks.filter(t => (t.status || (t.completed ? 'done' : 'pending')) === 'pending');
+          data = `日付: ${date}\n完了: ${done.map(t => t.text).join(', ') || 'なし'}\n未達: ${failed.map(t => t.text).join(', ') || 'なし'}\n未着手: ${pending.map(t => t.text).join(', ') || 'なし'}`;
+          const rating = dayRatings[date];
+          if (rating) data += `\n評価: ${JSON.stringify(rating)}`;
+          const comment = comments[`day_${date}`];
+          if (comment) data += `\n本人コメント: ${comment}`;
+        }
+      } else {
+        const dates = Object.keys(WEEK_DATA);
+        const lines: string[] = [];
+        dates.forEach(d => {
+          const t = weekTasks[d];
+          if (!t) return;
+          const all = [...t.today, ...t.daily];
+          const done = all.filter(t => (t.status || (t.completed ? 'done' : 'pending')) === 'done').length;
+          const total = all.length;
+          lines.push(`${d}: ${done}/${total}完了`);
+          const c = comments[`day_${d}`];
+          if (c) lines.push(`  コメント: ${c}`);
+        });
+        data = lines.join('\n');
+        const wc = comments['weekly'];
+        if (wc) data += `\n\n週間コメント: ${wc}`;
+      }
+
+      const res = await fetch('/api/ai-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, data }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setReviews(prev => ({ ...prev, [key]: result.review }));
+        saveReview(key, result.review);
+      }
+    } catch (e) {
+      console.error('AI review error:', e);
+    } finally {
+      setReviewLoading(null);
+    }
   };
 
   const handleReorder = (date: string, type: 'today' | 'daily', reordered: Task[]) => {
@@ -800,6 +893,43 @@ export default function Home() {
                 })}
               </div>
             </div>
+
+            {/* Daily Comment */}
+            <div className={styles.diarySection}>
+              <h4 className={styles.taskSectionTitle}>
+                <span className={styles.diaryBadge}>DIARY</span>
+                <span className={styles.taskSectionSub}>今日のコメント</span>
+              </h4>
+              <textarea
+                className={styles.diaryTextarea}
+                value={comments[`day_${date}`] || ''}
+                onChange={(e) => handleCommentChange(`day_${date}`, e.target.value)}
+                placeholder="今日の出来事、感じたこと、反省点など..."
+                rows={3}
+              />
+            </div>
+
+            {/* AI Daily Review */}
+            <div className={styles.reviewSection}>
+              <div className={styles.reviewHeader}>
+                <h4 className={styles.taskSectionTitle}>
+                  <span className={styles.reviewBadge}>AI REVIEW</span>
+                  <span className={styles.taskSectionSub}>今日の振り返り</span>
+                </h4>
+                <button
+                  className={styles.reviewBtn}
+                  onClick={() => requestAIReview(`day_${date}`, 'daily')}
+                  disabled={reviewLoading === `day_${date}`}
+                >
+                  {reviewLoading === `day_${date}` ? '生成中...' : 'AI レビューを生成'}
+                </button>
+              </div>
+              {reviews[`day_${date}`] && (
+                <div className={styles.reviewContent}>
+                  {reviews[`day_${date}`]}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -852,6 +982,45 @@ export default function Home() {
         <section className={styles.dayViewSection}>
           <div className={styles.container}>
             {renderDayCard(selectedDate)}
+
+            {/* Weekly Section (shown on last day or always accessible) */}
+            {selectedDate === dates[dates.length - 1] && (
+              <div className={styles.weeklySection}>
+                <div className={styles.diarySection}>
+                  <h4 className={styles.taskSectionTitle}>
+                    <span className={styles.weeklyBadge}>WEEKLY DIARY</span>
+                    <span className={styles.taskSectionSub}>今週のコメント</span>
+                  </h4>
+                  <textarea
+                    className={styles.diaryTextarea}
+                    value={comments['weekly'] || ''}
+                    onChange={(e) => handleCommentChange('weekly', e.target.value)}
+                    placeholder="今週全体の振り返り、来週への意気込み..."
+                    rows={4}
+                  />
+                </div>
+                <div className={styles.reviewSection}>
+                  <div className={styles.reviewHeader}>
+                    <h4 className={styles.taskSectionTitle}>
+                      <span className={styles.reviewBadge}>AI WEEKLY REVIEW</span>
+                      <span className={styles.taskSectionSub}>今週の振り返り</span>
+                    </h4>
+                    <button
+                      className={styles.reviewBtn}
+                      onClick={() => requestAIReview('weekly', 'weekly')}
+                      disabled={reviewLoading === 'weekly'}
+                    >
+                      {reviewLoading === 'weekly' ? '生成中...' : 'AI 週間レビューを生成'}
+                    </button>
+                  </div>
+                  {reviews['weekly'] && (
+                    <div className={styles.reviewContent}>
+                      {reviews['weekly']}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
