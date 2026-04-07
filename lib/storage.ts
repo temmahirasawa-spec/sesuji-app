@@ -83,6 +83,28 @@ export const loadRatingsCloud = async (date: string): Promise<{ [key: string]: n
 };
 
 // ============================
+// Training Day Flag
+// ============================
+
+const TRAINING_KEY = 'sesuji_training';
+
+export const loadTrainingDay = (date: string): boolean | null => {
+  const v = localLoad(TRAINING_KEY, date);
+  if (v === null) return null; // not yet chosen
+  return v === true;
+};
+
+export const saveTrainingDay = (date: string, isTraining: boolean) => {
+  localSave(TRAINING_KEY, date, isTraining);
+  cloudSave(`training_${date}`, isTraining);
+};
+
+export const loadTrainingDayCloud = async (date: string): Promise<boolean | null> => {
+  const v = await cloudLoad(`training_${date}`);
+  return v === null ? null : v === true;
+};
+
+// ============================
 // Comments (daily / weekly diary)
 // ============================
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Task, TaskStatus, DayPlan } from '@/lib/types';
-import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud, loadRatings, saveRatings, loadRatingsCloud, loadComment, saveComment, loadCommentCloud, loadReview, saveReview, loadReviewCloud } from '@/lib/storage';
+import { saveTasks, loadTasks, localSaveTasks, mergeTasks, saveTimeRecord, loadTimeRecord, loadTasksCloud, loadTimeRecordCloud, loadRatings, saveRatings, loadRatingsCloud, loadComment, saveComment, loadCommentCloud, loadReview, saveReview, loadReviewCloud, loadTrainingDay, saveTrainingDay, loadTrainingDayCloud } from '@/lib/storage';
 import { inspirations } from '@/lib/inspirations';
 import { ParsedTask } from '@/types/taskParsing';
 import VoiceInput from './components/VoiceInput';
@@ -24,29 +24,57 @@ const WEEKLY_GOALS = [
 // ============================
 // DAILY ROUTINE（全日共通・時系列）
 // ============================
-const makeDailyTasks = (date: string): Task[] => {
-  const hasBodySkincare = !['3/31', '4/1'].includes(date); // 4/2以降すべて
+const makeDailyTasks = (date: string, isTrainingDay: boolean = false): Task[] => {
+  const hasBodySkincare = !['3/31', '4/1'].includes(date);
 
-  const tasks: Task[] = [
-    // Morning
-    { id: 201, text: 'サプリメント摂取（朝）', completed: false, category: 'morning' },
-    { id: 202, text: '日焼けをする', completed: false, category: 'morning' },
-    // Work
-    { id: 301, text: '仕事中プライベート禁止（SNS・動画など）', completed: false, category: 'work' },
-    // Evening
-    { id: 402, text: 'サプリメント摂取（夜：プロテイン・グルタミン）', completed: false, category: 'evening' },
-    // Night
-    { id: 501, text: 'ボディケア（乳液・ケアセラ・ホホバ）', completed: false, category: 'night' },
-    { id: 502, text: '禁欲', completed: false, category: 'night' },
-    { id: 503, text: '深夜スマホ禁止', completed: false, category: 'night' },
-    { id: 504, text: '23:00 全タスク完了（以降のみ喫煙可）', completed: false, category: 'night' },
-  ];
+  const tasks: Task[] = [];
 
-  // スキンケアは4/2（水）から
-  if (hasBodySkincare) {
-    tasks.splice(1, 0, { id: 203, text: 'スキンケア（朝：洗顔・ビュッフェ）', completed: false, category: 'morning' });
-    tasks.splice(tasks.findIndex(t => t.id === 501), 0, { id: 500, text: 'スキンケア（夜：AHA洗顔・レチノイド）', completed: false, category: 'night' });
+  // === MORNING ===
+  if (isTrainingDay) {
+    tasks.push({ id: 201, text: '起床直後：代謝と免疫の起動', completed: false, category: 'morning', memo: 'プロテイン20g ＋ サイリウム5g ＋ グルタミン5g\n寝起きの枯渇した体にアミノ酸とグルタミンを送り込み、腸と免疫を整える。' });
+  } else {
+    tasks.push({ id: 201, text: '起床直後：整腸と分解抑制', completed: false, category: 'morning', memo: 'プロテイン20g ＋ サイリウム5g ＋ グルタミン5g\n非活動日も腸内環境と血中アミノ酸濃度を一定に保つ。' });
   }
+  tasks.push({ id: 202, text: '日焼けをする', completed: false, category: 'morning' });
+  if (hasBodySkincare) {
+    tasks.push({ id: 203, text: 'スキンケア（朝：洗顔・ビュッフェ）', completed: false, category: 'morning' });
+  }
+
+  // === WORK ===
+  tasks.push({ id: 301, text: '仕事中プライベート禁止（SNS・動画など）', completed: false, category: 'work' });
+  if (isTrainingDay) {
+    tasks.push({ id: 302, text: '昼食（12:00）：午後のエネルギー源', completed: false, category: 'work', memo: '固形物の食事を摂る。しっかり糖質を摂り、1時間後のトレーニングに備える。' });
+  } else {
+    tasks.push({ id: 302, text: '昼食（12:00）：パフォーマンス維持', completed: false, category: 'work', memo: '仕事に集中するため、低GIの食事を意識。マルトデキストリンは使わない。' });
+  }
+
+  // === EVENING ===
+  if (isTrainingDay) {
+    tasks.push({ id: 401, text: 'トレーニング中（13:00〜）：水分補給のみ', completed: false, category: 'evening', memo: '水のみで進める。胃を軽く保ち、集中力を削がないようにする。' });
+    tasks.push({ id: 402, text: 'トレーニング直後：最大効率のリカバリー', completed: false, category: 'evening', memo: 'プロテイン20g ＋ マルトデキストリン50g ＋ グルタミン5g\nトレ直後が最も重要。糖質でインスリンを出し、グルタミンとプロテインを筋肉へ高速で送り込む。疲労感の軽減に直結。' });
+    tasks.push({ id: 403, text: '夕方（17-18時）：カタボリック防止', completed: false, category: 'evening', memo: 'プロテイン20gのみ。仕事の集中力を保ちつつ、筋肉の材料を切らさないための補給。' });
+  } else {
+    tasks.push({ id: 401, text: '午後（15-16時）：間食としての補給', completed: false, category: 'evening', memo: 'プロテイン20gのみ。食欲がなくても、飲むことで筋肉量を維持するノルマを達成。' });
+  }
+
+  // === NIGHT ===
+  if (isTrainingDay) {
+    tasks.push({ id: 501, text: '夕食（21:00以降）：楽しみと密度の追求', completed: false, category: 'night', memo: '美味しいものをしっかり食べる時間。脂質も適宜摂り、総カロリーを回収。' });
+  } else {
+    tasks.push({ id: 501, text: '夕食（21:00以降）：栄養の完全回収', completed: false, category: 'night', memo: 'トレーニングがない分、しっかり噛んで栄養を摂ることに集中。' });
+  }
+  if (hasBodySkincare) {
+    tasks.push({ id: 500, text: 'スキンケア（夜：AHA洗顔・レチノイド）', completed: false, category: 'night' });
+  }
+  tasks.push({ id: 502, text: 'ボディケア（乳液・ケアセラ・ホホバ）', completed: false, category: 'night' });
+  if (isTrainingDay) {
+    tasks.push({ id: 503, text: '就寝前：夜間の修復ブースト', completed: false, category: 'night', memo: 'プロテイン20g ＋ グルタミン5g\n寝ている間の成長ホルモン分泌や組織修復に合わせてグルタミンを追加し、翌朝の疲労残りを防ぐ。' });
+  } else {
+    tasks.push({ id: 503, text: '就寝前：翌日へのリカバリー', completed: false, category: 'night', memo: 'プロテイン20g ＋ グルタミン5g\n翌日のトレーニングや仕事に向けて、寝ている間に体をメンテナンス。' });
+  }
+  tasks.push({ id: 504, text: '禁欲', completed: false, category: 'night' });
+  tasks.push({ id: 505, text: '深夜スマホ禁止', completed: false, category: 'night' });
+  tasks.push({ id: 506, text: '23:00 全タスク完了（以降のみ喫煙可）', completed: false, category: 'night' });
 
   return tasks;
 };
@@ -270,6 +298,7 @@ export default function Home() {
   const [comments, setComments] = useState<{ [key: string]: string }>({});
   const [reviews, setReviews] = useState<{ [key: string]: string }>({});
   const [reviewLoading, setReviewLoading] = useState<string | null>(null);
+  const [trainingDays, setTrainingDays] = useState<{ [date: string]: boolean }>({});
 
   useEffect(() => {
     // 1. まずlocalStorageから即座に表示
@@ -282,6 +311,7 @@ export default function Home() {
     const ratings: { [date: string]: { [key: string]: number } } = {};
     const localComments: { [key: string]: string } = {};
     const localReviews: { [key: string]: string } = {};
+    const localTraining: { [date: string]: boolean } = {};
 
     // 3/31のルーティン構成（タスクのリスト）を他の日にも反映
     // 各日の完了状態は個別に保持する
@@ -292,26 +322,15 @@ export default function Home() {
       const savedToday = loadTasks(`${date}_today`);
       const savedDaily = loadTasks(`${date}_daily`);
 
+      // トレーニング日フラグ
+      const trainingFlag = loadTrainingDay(date);
+      if (trainingFlag !== null) localTraining[date] = trainingFlag;
+
       let daily: Task[];
-      if (date === '3/31') {
-        // 3/31はそのまま
-        daily = savedDaily ? mergeTasks(makeDailyTasks(date), savedDaily) : mergeTasks(makeDailyTasks(date), null);
-      } else if (baseDaily && syncVersion !== currentSyncVersion) {
-        // 3/31のルーティン構成を反映（完了状態は各日のものを保持）
-        const existingMap = new Map<number, Task>();
-        if (savedDaily) savedDaily.forEach((t: Task) => existingMap.set(t.id, t));
-        daily = baseDaily.map((t: Task) => {
-          const existing = existingMap.get(t.id);
-          return { ...t, completed: existing?.completed ?? false, status: existing?.status ?? undefined };
-        });
-        saveTasks(`${date}_daily`, daily);
-      } else if (savedDaily) {
-        daily = mergeTasks(makeDailyTasks(date), savedDaily);
-      } else if (baseDaily) {
-        daily = baseDaily.map((t: Task) => ({ ...t, completed: false, status: undefined }));
-        saveTasks(`${date}_daily`, daily);
+      if (savedDaily && savedDaily.length > 0) {
+        daily = savedDaily;
       } else {
-        daily = mergeTasks(makeDailyTasks(date), null);
+        daily = makeDailyTasks(date, trainingFlag === true);
       }
 
       loaded[date] = {
@@ -347,6 +366,7 @@ export default function Home() {
     setTimeRecords(times);
     setDayRatings(ratings);
     setComments(localComments);
+    setTrainingDays(localTraining);
     setReviews(localReviews);
     setIsLoaded(true);
     updateProgress(loaded);
@@ -709,6 +729,30 @@ export default function Home() {
     }
   };
 
+  const handleTrainingToggle = (date: string, isTraining: boolean) => {
+    // Save choice
+    setTrainingDays(prev => ({ ...prev, [date]: isTraining }));
+    saveTrainingDay(date, isTraining);
+
+    // Regenerate daily tasks, preserving completed state by ID
+    const newTasks = { ...weekTasks };
+    const oldDaily = newTasks[date]?.daily || [];
+    const oldStatusMap = new Map<number, { completed: boolean; status?: string }>();
+    oldDaily.forEach(t => oldStatusMap.set(t.id, { completed: t.completed, status: t.status }));
+
+    const freshDaily = makeDailyTasks(date, isTraining);
+    const merged = freshDaily.map(t => {
+      const old = oldStatusMap.get(t.id);
+      if (old) return { ...t, completed: old.completed, status: old.status as any };
+      return t;
+    });
+
+    newTasks[date] = { ...newTasks[date], daily: merged };
+    setWeekTasks({ ...newTasks });
+    saveTasks(`${date}_daily`, merged);
+    updateProgress(newTasks);
+  };
+
   const handleRating = (date: string, category: string, value: number) => {
     const current = dayRatings[date] || {};
     const updated = { ...current, [category]: current[category] === value ? 0 : value };
@@ -927,10 +971,27 @@ export default function Home() {
 
             {/* DAILY ROUTINE tasks */}
             <div className={styles.taskSection}>
-              <h4 className={styles.taskSectionTitle}>
-                <span className={styles.taskSectionBadgeDaily}>DAILY</span>
-                <span className={styles.taskSectionSub}>毎日のルーティン</span>
-              </h4>
+              <div className={styles.taskSectionHeader}>
+                <h4 className={styles.taskSectionTitle}>
+                  <span className={styles.taskSectionBadgeDaily}>DAILY</span>
+                  <span className={styles.taskSectionSub}>毎日のルーティン</span>
+                </h4>
+                <div className={styles.trainingToggle}>
+                  <span className={styles.trainingToggleLabel}>
+                    {trainingDays[date] === undefined ? '今日はトレーニング？' : trainingDays[date] ? '🏋 トレ日' : '😌 休息日'}
+                  </span>
+                  <div className={styles.trainingToggleBtns}>
+                    <button
+                      className={`${styles.trainingBtn} ${trainingDays[date] === true ? styles.trainingBtnActive : ''}`}
+                      onClick={() => handleTrainingToggle(date, true)}
+                    >はい</button>
+                    <button
+                      className={`${styles.trainingBtn} ${styles.trainingBtnRest} ${trainingDays[date] === false ? styles.trainingBtnActive : ''}`}
+                      onClick={() => handleTrainingToggle(date, false)}
+                    >いいえ</button>
+                  </div>
+                </div>
+              </div>
               {renderTaskList(tasks.daily, date, 'daily')}
               {renderAddForm(date, 'daily')}
             </div>
