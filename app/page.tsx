@@ -50,7 +50,6 @@ const makeDailyTasks = (date: string, isTrainingDay: boolean = false): Task[] =>
 
   // === EVENING ===
   if (isTrainingDay) {
-    tasks.push({ id: 401, text: 'トレーニング中（13:00〜）：水分補給のみ', completed: false, category: 'evening', memo: '水のみで進める。胃を軽く保ち、集中力を削がないようにする。' });
     tasks.push({ id: 402, text: 'トレーニング直後：最大効率のリカバリー', completed: false, category: 'evening', memo: 'プロテイン20g ＋ マルトデキストリン50g ＋ グルタミン5g\nトレ直後が最も重要。糖質でインスリンを出し、グルタミンとプロテインを筋肉へ高速で送り込む。疲労感の軽減に直結。' });
     tasks.push({ id: 403, text: '夕方（17-18時）：カタボリック防止', completed: false, category: 'evening', memo: 'プロテイン20gのみ。仕事の集中力を保ちつつ、筋肉の材料を切らさないための補給。' });
   } else {
