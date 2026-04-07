@@ -35,7 +35,6 @@ const makeDailyTasks = (date: string, isTrainingDay: boolean = false): Task[] =>
   } else {
     tasks.push({ id: 201, text: '起床直後：整腸と分解抑制', completed: false, category: 'morning', memo: 'プロテイン20g ＋ サイリウム5g ＋ グルタミン5g\n非活動日も腸内環境と血中アミノ酸濃度を一定に保つ。' });
   }
-  tasks.push({ id: 202, text: '日焼けをする', completed: false, category: 'morning' });
   if (hasBodySkincare) {
     tasks.push({ id: 203, text: 'スキンケア（朝：洗顔・ビュッフェ）', completed: false, category: 'morning' });
   }
