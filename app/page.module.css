@@ -565,42 +565,99 @@
   color: var(--color-success);
 }
 
-/* Goal Section */
-.goalSection {
+/* Purpose & Goals Section */
+.purposeSection {
+  margin-bottom: 1.5rem;
+}
+
+.purposeBar {
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(6, 182, 212, 0.04));
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.06));
   border-radius: var(--radius-sm);
-  margin-bottom: 1rem;
-  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-left: 3px solid var(--color-primary);
+  margin-bottom: 0.75rem;
 }
 
-.goalHeader {
-  margin-bottom: 0.5rem;
-}
-
-.goalLabel {
-  font-size: 0.65rem;
+.purposeLabel {
+  display: block;
+  font-size: 0.6rem;
   font-weight: 800;
   color: var(--color-primary);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.3rem;
 }
 
-.goalList {
+.purposeText {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.goalsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+@media (max-width: 480px) {
+  .goalsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.goalCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--color-border-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.15s ease;
+}
+
+.goalCard:hover {
+  border-color: var(--color-primary-light);
+}
+
+.goalCardIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.goalCardTitle {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.goalCardSub {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+.dailyRules {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
-.goalTag {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-primary-dark);
-  background: rgba(99, 102, 241, 0.08);
-  padding: 0.25rem 0.6rem;
+.ruleTag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: rgba(15, 23, 42, 0.04);
+  padding: 0.2rem 0.5rem;
   border-radius: 100px;
-  border: 1px solid rgba(99, 102, 241, 0.12);
-  word-break: break-word;
-  white-space: normal;
+  border: 1px solid var(--color-border);
 }
 
 /* Milestone */

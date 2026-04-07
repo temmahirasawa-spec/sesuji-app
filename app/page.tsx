@@ -12,13 +12,24 @@ import styles from './page.module.css';
 const SortableTaskList = dynamic(() => import('./SortableTaskList'), { ssr: false });
 
 // ============================
-// GOALS（大目標）
+// PURPOSE & GOALS
 // ============================
-const WEEKLY_GOALS = [
+const PURPOSE = '強靭な肉体と精悍な顔つきを基盤とし、最高のパフォーマンスで働き、家族との豊かな時間を創出する';
+
+const GOALS = [
+  { icon: '💪', title: '体重65kg / 体脂肪率15%', sub: 'がたいの良さと腹筋の締まりを両立' },
+  { icon: '🔥', title: '精悍な顔つきの獲得', sub: '顎ライン・浮腫み排除・テストステロンの充実' },
+  { icon: '📈', title: '挙上重量の定量的更新', sub: '常に前回の自分を1%でも超える' },
+  { icon: '🍽', title: '時差式・高密度食事', sub: '昼は覚醒（低GI）、夜は構築（高密度回収食）' },
+  { icon: '⏰', title: '20時までの業務完了', sub: '週3-4回のトレ時間を死守' },
+  { icon: '🧬', title: '体内環境の最適化', sub: 'グルタミン・サイリウム・睡眠のシステム化' },
+];
+
+const DAILY_RULES = [
   '禁欲',
   '23時まで禁煙',
-  '仕事中にプライベートなネットサーフィン・動画視聴をしない',
-  '空いた時間は家事（掃除・洗濯・洗い物）をする',
+  '仕事中プライベート禁止',
+  '空き時間は家事',
 ];
 
 // ============================
@@ -94,7 +105,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 5, text: '日焼け', completed: false, category: 'evening' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['3/31'].milestone,
     milestoneDescription: inspirations['3/31'].story,
   },
@@ -109,7 +120,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 3, text: 'レチノイド開始', completed: false, category: 'night' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['4/1'].milestone,
     milestoneDescription: inspirations['4/1'].story,
   },
@@ -124,7 +135,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 3, text: 'セックス判定（Option A）', completed: false, category: 'night' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['4/2'].milestone,
     milestoneDescription: inspirations['4/2'].story,
   },
@@ -138,7 +149,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 2, text: '仕事の詰まり解消', completed: false, category: 'work' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['4/3'].milestone,
     milestoneDescription: inspirations['4/3'].story,
   },
@@ -153,7 +164,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 3, text: 'セックス可能（Option B）', completed: false, category: 'night' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['4/4'].milestone,
     milestoneDescription: inspirations['4/4'].story,
   },
@@ -168,7 +179,7 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 3, text: 'サイリウム + 水分2L', completed: false, category: 'morning' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['4/5'].milestone,
     milestoneDescription: inspirations['4/5'].story,
   },
@@ -184,44 +195,44 @@ const WEEK_DATA: { [key: string]: DayPlan } = {
       { id: 4, text: '次週へのOSアップデート', completed: false, category: 'night' },
     ],
     dailyTasks: [],
-    goals: WEEKLY_GOALS,
+    goals: DAILY_RULES,
     milestoneTitle: inspirations['4/6'].milestone,
     milestoneDescription: inspirations['4/6'].story,
   },
   '4/7': {
     date: '4/7', day: '火', focus: '新週スタート',
     inspiration: inspirations['4/7'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/7'].milestone, milestoneDescription: inspirations['4/7'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/7'].milestone, milestoneDescription: inspirations['4/7'].story,
   },
   '4/8': {
     date: '4/8', day: '水', focus: 'Deep Work Day',
     inspiration: inspirations['4/8'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/8'].milestone, milestoneDescription: inspirations['4/8'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/8'].milestone, milestoneDescription: inspirations['4/8'].story,
   },
   '4/9': {
     date: '4/9', day: '木', focus: 'ビルドデー',
     inspiration: inspirations['4/9'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/9'].milestone, milestoneDescription: inspirations['4/9'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/9'].milestone, milestoneDescription: inspirations['4/9'].story,
   },
   '4/10': {
     date: '4/10', day: '金', focus: 'リカバリー＆調整',
     inspiration: inspirations['4/10'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/10'].milestone, milestoneDescription: inspirations['4/10'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/10'].milestone, milestoneDescription: inspirations['4/10'].story,
   },
   '4/11': {
     date: '4/11', day: '土', focus: 'トレーニングデー',
     inspiration: inspirations['4/11'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/11'].milestone, milestoneDescription: inspirations['4/11'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/11'].milestone, milestoneDescription: inspirations['4/11'].story,
   },
   '4/12': {
     date: '4/12', day: '日', focus: '自由時間の設計',
     inspiration: inspirations['4/12'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/12'].milestone, milestoneDescription: inspirations['4/12'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/12'].milestone, milestoneDescription: inspirations['4/12'].story,
   },
   '4/13': {
     date: '4/13', day: '月', focus: 'Week 2 レビュー',
     inspiration: inspirations['4/13'].description, todayTasks: [], dailyTasks: [],
-    goals: WEEKLY_GOALS, milestoneTitle: inspirations['4/13'].milestone, milestoneDescription: inspirations['4/13'].story,
+    goals: DAILY_RULES, milestoneTitle: inspirations['4/13'].milestone, milestoneDescription: inspirations['4/13'].story,
   },
 };
 
@@ -923,22 +934,28 @@ export default function Home() {
               {renderTimeTracker(date, 'sleep', '01:00', '就寝')}
             </div>
 
-            {/* Goals */}
-            <div className={styles.goalSection}>
-              <div className={styles.goalHeader}>
-                <span className={styles.goalLabel}>GOALS</span>
+            {/* Purpose & Goals */}
+            <div className={styles.purposeSection}>
+              <div className={styles.purposeBar}>
+                <span className={styles.purposeLabel}>PURPOSE</span>
+                <p className={styles.purposeText}>{PURPOSE}</p>
               </div>
-              <div className={styles.goalList}>
-                {dayData.goals.map((g, i) => (
-                  <span key={i} className={styles.goalTag}>{g}</span>
+              <div className={styles.goalsGrid}>
+                {GOALS.map((g, i) => (
+                  <div key={i} className={styles.goalCard}>
+                    <span className={styles.goalCardIcon}>{g.icon}</span>
+                    <div>
+                      <span className={styles.goalCardTitle}>{g.title}</span>
+                      <span className={styles.goalCardSub}>{g.sub}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
-
-            {/* Milestone */}
-            <div className={styles.milestoneSection}>
-              <span className={styles.milestoneTitle}>{dayData.milestoneTitle}</span>
-              <p className={styles.milestoneDescription}>{dayData.milestoneDescription}</p>
+              <div className={styles.dailyRules}>
+                {dayData.goals.map((r, i) => (
+                  <span key={i} className={styles.ruleTag}>{r}</span>
+                ))}
+              </div>
             </div>
 
             {/* Voice Input */}
