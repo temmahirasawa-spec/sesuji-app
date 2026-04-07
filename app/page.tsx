@@ -767,15 +767,54 @@ export default function Home() {
     );
   };
 
+  const calcSleepDuration = (date: string): string | null => {
+    const wakeup = timeRecords[`${date}_wakeup`];
+    if (!wakeup) return null;
+
+    // 前日の就寝時間を探す
+    const allDates = Object.keys(WEEK_DATA);
+    const idx = allDates.indexOf(date);
+    const prevDate = idx > 0 ? allDates[idx - 1] : null;
+    const sleep = prevDate ? timeRecords[`${prevDate}_sleep`] : null;
+    if (!sleep) return null;
+
+    const [sh, sm] = sleep.split(':').map(Number);
+    const [wh, wm] = wakeup.split(':').map(Number);
+
+    // 就寝が24時以降（0:00-5:00）の場合はそのまま、それ以外は翌日扱い
+    let sleepMin = sh * 60 + sm;
+    let wakeMin = wh * 60 + wm;
+
+    // 就寝が深夜（例: 1:00）で起床が朝（例: 8:00）→ 同日
+    // 就寝が夜（例: 23:00）で起床が朝（例: 8:00）→ 翌日
+    if (sleepMin > wakeMin) {
+      // 就寝が前日夜 → 起床は翌朝
+      wakeMin += 24 * 60;
+    }
+
+    const diffMin = wakeMin - sleepMin;
+    if (diffMin <= 0 || diffMin > 24 * 60) return null;
+
+    const h = Math.floor(diffMin / 60);
+    const m = diffMin % 60;
+    return m > 0 ? `${h}h${m}m` : `${h}h`;
+  };
+
   const renderTimeTracker = (date: string, type: 'wakeup' | 'sleep', target: string, label: string) => {
     const actual = timeRecords[`${date}_${type}`] || '';
     const diff = calcTimeDiff(target, actual);
     const isLate = diff.startsWith('+');
     const isEarly = diff.startsWith('-');
+    const sleepDuration = type === 'wakeup' ? calcSleepDuration(date) : null;
 
     return (
       <div className={styles.timeTracker}>
-        <div className={styles.timeTrackerLabel}>{label}</div>
+        <div className={styles.timeTrackerHeader}>
+          <span className={styles.timeTrackerLabel}>{label}</span>
+          {sleepDuration && (
+            <span className={styles.sleepDuration}>&#128164; {sleepDuration}</span>
+          )}
+        </div>
         <div className={styles.timeTrackerRow}>
           <div className={styles.timeTarget}>
             <span className={styles.timeTargetLabel}>TARGET</span>

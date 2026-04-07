@@ -472,12 +472,27 @@
   border: 1px solid var(--color-border);
 }
 
+.timeTrackerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 .timeTrackerLabel {
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--color-text-muted);
   letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+}
+
+.sleepDuration {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.08);
+  padding: 0.15rem 0.45rem;
+  border-radius: 100px;
 }
 
 .timeTrackerRow {
