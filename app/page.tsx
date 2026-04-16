@@ -529,6 +529,31 @@ export default function Home() {
     setTimeout(() => setCelebrations(prev => prev.filter(c => c.id !== id)), 1000);
   };
 
+  const handleDateSelect = (dateKey: string, year: number, month: number, day: number) => {
+    // WEEK_DATAにない日付を動的に作成
+    if (!WEEK_DATA[dateKey]) {
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      const dow = new Date(year, month, day).getDay();
+      WEEK_DATA[dateKey] = {
+        date: dateKey,
+        day: dayNames[dow],
+        focus: '',
+        inspiration: '',
+        todayTasks: [],
+        dailyTasks: [],
+        goals: DAILY_RULES,
+        milestoneTitle: '',
+        milestoneDescription: '',
+      };
+    }
+    if (!weekTasks[dateKey]) {
+      const isTraining = trainingDays[dateKey] === true;
+      const daily = makeDailyTasks(dateKey, isTraining);
+      setWeekTasks(prev => ({ ...prev, [dateKey]: { today: [], daily } }));
+    }
+    setSelectedDate(dateKey);
+  };
+
   const handleTimeChange = (date: string, type: 'wakeup' | 'sleep', value: string) => {
     const key = `${date}_${type}`;
     setTimeRecords(prev => ({ ...prev, [key]: value }));
@@ -1148,15 +1173,19 @@ export default function Home() {
                     const dateKey = `${month + 1}/${day}`;
                     const dow = new Date(year, month, day).getDay();
                     const hasData = !!WEEK_DATA[dateKey];
+                    const thisDate = new Date(year, month, day);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const isPastWithoutData = thisDate < today && !hasData;
+                    const isActive = hasData || !isPastWithoutData;
                     const isSelected = selectedDate === dateKey;
-                    const isToday = (() => { const n = new Date(); return n.getFullYear() === year && n.getMonth() === month && n.getDate() === day; })();
+                    const isToday = thisDate.getTime() === today.getTime();
                     const prog = hasData ? getDayProgress(dateKey) : 0;
                     return (
                       <button
                         key={dateKey}
-                        className={`${styles.dateStripDay} ${isSelected ? styles.dateStripDaySelected : ''} ${isToday ? styles.dateStripDayToday : ''} ${hasData ? styles.dateStripDayHasData : ''}`}
-                        onClick={() => { if (hasData) setSelectedDate(dateKey); }}
-                        disabled={!hasData}
+                        className={`${styles.dateStripDay} ${isSelected ? styles.dateStripDaySelected : ''} ${isToday ? styles.dateStripDayToday : ''} ${(hasData || isActive) ? styles.dateStripDayHasData : ''}`}
+                        onClick={() => { if (isActive) handleDateSelect(dateKey, year, month, day); }}
+                        disabled={!isActive}
                       >
                         <span className={styles.dateStripDow}>{dayNames[dow]}</span>
                         <span className={styles.dateStripNum}>{day}</span>
